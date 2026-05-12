@@ -40,3 +40,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local-only: Claude Code config, working specs, scripts, v1 spec doc
+.claude/
+/files/
+/scripts/
+/namma-app-v1-spec.docx
+
