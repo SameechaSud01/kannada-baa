@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
@@ -6,6 +6,7 @@ import { Fonts } from '../../constants/fonts';
 import { Spacing, Radius } from '../../constants/spacing';
 import type { Lesson } from '../../constants/lessons/types';
 import type { DrillAttempt } from '../../hooks/useLessonRunner';
+import { useProgressStore } from '../../stores/progressStore';
 
 interface DoneCardProps {
   lesson: Lesson;
@@ -20,6 +21,26 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
   const correctCount = drillAttempts.filter((a) => a.correct).length;
   const totalDrills = drillAttempts.length;
   const phraseCount = lesson.intake.length;
+
+  const completedAlready = useProgressStore((s) => s.completedLessons.includes(lesson.id));
+  const completeLesson = useProgressStore((s) => s.completeLesson);
+  const updateStreak = useProgressStore((s) => s.updateStreak);
+  const recordActivity = useProgressStore((s) => s.recordActivity);
+
+  useEffect(() => {
+    // IMPORTANT: completeLesson() in progressStore over-increments xp,
+    // totalPhrasesLearned, totalMinutesPracticed on duplicate calls
+    // (only the completedLessons array is deduped at the action level).
+    // The completedAlready check above is the load-bearing guard against
+    // this bug. Do not call this useEffect without it.
+    if (completedAlready) return;
+    const score = totalDrills > 0 ? Math.round((correctCount / totalDrills) * 100) : 0;
+    completeLesson(lesson.id, score, phraseCount, 0);
+    updateStreak();
+    recordActivity();
+    console.log('[lesson] completed', { lessonId: lesson.id, phrasesLearned: phraseCount });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleMarkIntent = () => {
     if (intentMarked) return;
