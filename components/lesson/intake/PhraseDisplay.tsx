@@ -19,8 +19,6 @@ export function PhraseDisplay({ phrase, hintRevealed, onRevealHint }: PhraseDisp
       style={{
         backgroundColor: Colors.surfaceContainerHighest,
         borderRadius: Radius.xl,
-        borderWidth: 0.5,
-        borderColor: Colors.outlineVariant,
         paddingVertical: Spacing.xxl,
         paddingHorizontal: Spacing.lg,
         alignItems: 'center',

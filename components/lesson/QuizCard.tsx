@@ -53,8 +53,6 @@ export function QuizCard({ question, options, correctIndex, onAnswer }: QuizCard
       style={{
         backgroundColor: bgColor,
         borderRadius: Radius.xl,
-        borderWidth: 0.5,
-        borderColor: Colors.outlineVariant,
         padding: Spacing.xxl,
         transform: [{ translateX: shakeAnim }],
       }}
@@ -76,9 +74,7 @@ export function QuizCard({ question, options, correctIndex, onAnswer }: QuizCard
           key={index}
           onPress={() => handlePress(index)}
           style={({ pressed }) => ({
-            backgroundColor: pressed ? Colors.secondaryFixed : Colors.surfaceContainerHighest,
-            borderWidth: 0.5,
-            borderColor: Colors.outlineVariant,
+            backgroundColor: pressed ? Colors.secondaryFixed : Colors.surfaceContainerHigh,
             borderRadius: Radius.md,
             padding: Spacing.md,
             marginBottom: Spacing.sm,

@@ -2,6 +2,7 @@ import { View, Text, Pressable } from 'react-native';
 import { Colors } from '../../../constants/colors';
 import { Fonts } from '../../../constants/fonts';
 import { Spacing, Radius } from '../../../constants/spacing';
+import { Icons } from '../../../constants/icons';
 import { deviceTtsAudioService } from '../../../services/audio/deviceTtsAudioService';
 import type { Phrase } from '../../../constants/lessons/types';
 
@@ -33,11 +34,15 @@ export function AudioControls({ phrase }: AudioControlsProps) {
           paddingHorizontal: Spacing.xl,
           minHeight: 44,
           minWidth: 44,
+          flexDirection: 'row',
+          alignItems: 'center',
           justifyContent: 'center',
+          gap: Spacing.sm,
         })}
       >
+        <Icons.audio size={18} color={Colors.onSecondaryContainer} />
         <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 14, color: Colors.onSecondaryContainer }}>
-          🔊 Hear again
+          Hear again
         </Text>
       </Pressable>
     </View>

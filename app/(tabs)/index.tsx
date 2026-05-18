@@ -1,25 +1,29 @@
 import { useEffect, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, Animated, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
+import { Radius } from '../../constants/spacing';
+import { Icons } from '../../constants/icons';
 import { useAuthStore } from '../../stores/useAuthStore';
-import { useCopy } from '../../hooks/useCopy';
 import { LESSONS, LESSON_ORDER } from '../../constants/lessons';
+import { PLANNED_LESSON_SLOTS, TOTAL_LESSON_SLOTS } from '../../constants/lessons/plannedLessons';
 import type { Phrase } from '../../constants/lessons/types';
 import { deviceTtsAudioService } from '../../services/audio/deviceTtsAudioService';
 import { formatFirstName } from '../../utils/formatName';
-import { useCompletedLessons, useDailyGoalToday } from '../../hooks/progress';
+import { useCompletedLessons, useStreak } from '../../hooks/progress';
 
 const STARTER_PHRASE: Phrase = {
   id: 'starter.namaskara',
   kannada: 'ನಮಸ್ಕಾರ',
-  transliteration: 'Namaskara',
+  transliteration: 'Namaskāra',
   english: 'Hello / Greetings',
   vocabAtoms: ['ನಮಸ್ಕಾರ'],
 };
+
+const ESTIMATED_MIN_PER_LESSON = 5;
 
 function speakable(text: string): string {
   return text.replace(/\[name\]/g, '').trim();
@@ -33,14 +37,13 @@ function wordOfDayIndex(arrayLength: number): number {
   return sum % arrayLength;
 }
 
+
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
   const completedLessons = useCompletedLessons();
-  const dailyGoal = useDailyGoalToday();
+  const streak = useStreak();
   const user = useAuthStore((s) => s.user);
-  const copy = useCopy();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(4)).current;
@@ -52,16 +55,14 @@ export default function HomeScreen() {
     ]).start();
   }, []);
 
-  const rawName = user?.user_metadata?.full_name
-    || user?.user_metadata?.name
-    || user?.email?.split('@')[0]
-    || 'there';
+  const rawName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split('@')[0] ||
+    'there';
   const userName = formatFirstName(rawName, 'there');
 
-  const nextLessonId = LESSON_ORDER.find((id) => !completedLessons.includes(id));
-  const nextLesson = nextLessonId ? LESSONS[nextLessonId] : null;
-  const allLessonsComplete = !nextLessonId;
-
+  // Word of the Day — drawn from learned phrases when available
   const completedPhrases: Phrase[] = completedLessons
     .map((id) => LESSONS[id])
     .filter((l): l is NonNullable<typeof l> => Boolean(l))
@@ -70,35 +71,34 @@ export default function HomeScreen() {
   const wordOfDay: Phrase = hasCompletedPhrases
     ? completedPhrases[wordOfDayIndex(completedPhrases.length)]
     : STARTER_PHRASE;
-  const wordOfDayKannadaForDisplay = speakable(wordOfDay.kannada) || wordOfDay.kannada;
-  const wordOfDayKannadaForTts = speakable(wordOfDay.kannada);
+  const wordOfDayKn = speakable(wordOfDay.kannada) || wordOfDay.kannada;
 
-  const reviewableLessons = completedLessons
-    .map((id) => LESSONS[id])
-    .filter((l): l is NonNullable<typeof l> => Boolean(l));
-  const hasReviewable = reviewableLessons.length > 0;
+  // Progress = lessons completed / 8 (Spec 01 §1)
+  const completedCount = Math.min(completedLessons.length, TOTAL_LESSON_SLOTS);
+  const progressPercent = Math.round((completedCount / TOTAL_LESSON_SLOTS) * 100);
+  const ringSize = 76;
+  const ringStroke = 7;
+  const ringR = (ringSize - ringStroke) / 2;
+  const ringCirc = 2 * Math.PI * ringR;
+  const ringOffset = ringCirc * (1 - completedCount / TOTAL_LESSON_SLOTS);
 
-  const goalPercent = dailyGoal.target > 0
-    ? Math.min(dailyGoal.completed / dailyGoal.target, 1)
-    : 0;
-  const goalDone = goalPercent >= 1;
-  const goalSize = 80;
-  const goalStroke = 6;
-  const goalR = (goalSize - goalStroke) / 2;
-  const goalCirc = 2 * Math.PI * goalR;
-  const goalOffset = goalCirc * (1 - goalPercent);
-  const showDailyDone = goalDone || allLessonsComplete;
+  // Next lesson — real if available, otherwise the next planned slot title
+  const nextLessonRealId = LESSON_ORDER.find((id) => !completedLessons.includes(id));
+  const nextLesson = nextLessonRealId ? LESSONS[nextLessonRealId] : null;
+  const nextSlot = PLANNED_LESSON_SLOTS[completedCount];
+  const nextTitle = nextLesson?.situation.title ?? nextSlot?.title ?? 'All caught up';
 
-  const reviewCardW = screenWidth * 0.55;
+  const allDone = completedCount >= TOTAL_LESSON_SLOTS;
 
   const handleStartNext = () => {
-    if (nextLessonId) router.push(`/lesson/${nextLessonId}`);
+    if (nextLessonRealId) router.push(`/lesson/${nextLessonRealId}`);
   };
 
   const handleListenWordOfDay = () => {
-    if (!wordOfDayKannadaForTts) return;
+    const txt = speakable(wordOfDay.kannada);
+    if (!txt) return;
     deviceTtsAudioService
-      .play(wordOfDayKannadaForTts)
+      .play(txt)
       .catch((err) => console.warn('[audio] home word-of-day failed', err));
   };
 
@@ -106,520 +106,325 @@ export default function HomeScreen() {
     <Animated.View
       style={{
         flex: 1,
-        backgroundColor: '#FBFBE2',
+        backgroundColor: Colors.surface,
         opacity: fadeAnim,
         transform: [{ translateY: slideAnim }],
       }}
     >
-      {/* ── GLASS HEADER ── */}
+      {/* ── APP BAR — empty left, centred wordmark, streak right (no hamburger) ── */}
       <View
         style={{
           paddingTop: insets.top + 8,
           paddingBottom: 12,
           paddingHorizontal: 24,
-          backgroundColor: 'rgba(251,251,226,0.85)',
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottomWidth: 0,
         }}
       >
-        {/* Hamburger + Title */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <Pressable
-            onPress={() => router.push('/profile')}
-            accessibilityRole="button"
-            accessibilityLabel="Open profile and settings"
-            hitSlop={8}
-          >
-            <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
-              <Path d="M3 6h18M3 12h18M3 18h18" stroke="#91001B" strokeWidth={2.2} strokeLinecap="round" />
-            </Svg>
-          </Pressable>
-          <Text
-            style={{
-              fontFamily: Fonts.notoSerifKannada.bold,
-              fontSize: 22,
-              color: '#91001B',
-              letterSpacing: -0.3,
-              lineHeight: 36,
-              paddingTop: 4,
-            }}
-          >
-            ಕನ್ನಡ ಬಾ
-          </Text>
-        </View>
-
-        {/* Profile avatar */}
-        <Pressable
-          onPress={() => router.push('/profile')}
-          accessibilityRole="button"
-          accessibilityLabel="Open profile"
-          style={({ pressed }) => ({
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: Colors.primaryContainer,
-            borderWidth: 2,
-            borderColor: 'rgba(145,0,27,0.15)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transform: [{ scale: pressed ? 0.94 : 1 }],
-          })}
+        <View style={{ width: 56 }} />
+        <Text
+          style={{
+            fontFamily: Fonts.notoSerifKannada.bold,
+            fontSize: 22,
+            color: Colors.primary,
+            letterSpacing: -0.3,
+            lineHeight: 36,
+            paddingTop: 4,
+          }}
+          maxFontSizeMultiplier={1.2}
         >
-          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: 15, color: '#FFFFFF' }}>
-            {userName[0]?.toUpperCase()}
-          </Text>
-        </Pressable>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-        <View style={{ paddingHorizontal: 24, paddingTop: 20 }}>
-          {/* ── WELCOME SECTION ── */}
-          <Text
-            style={{
-              fontFamily: Fonts.dmSans.medium,
-              fontSize: 13,
-              letterSpacing: 0.2,
-              color: '#464646',
-              marginBottom: 6,
-            }}
-          >
-            Namaskara, {userName}
-          </Text>
+          ಕನ್ನಡ ಬಾ
+        </Text>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            minWidth: 56,
+            justifyContent: 'flex-end',
+          }}
+          accessibilityRole="text"
+          accessibilityLabel={`Current streak: ${streak} day${streak === 1 ? '' : 's'}`}
+        >
+          <Icons.streak size={20} color={Colors.primary} />
           <Text
             style={{
               fontFamily: Fonts.dmSans.bold,
-              fontSize: 36,
-              color: '#1B1D0E',
-              lineHeight: 42,
-              marginBottom: 28,
+              fontSize: 16,
+              color: Colors.onSurface,
             }}
+            maxFontSizeMultiplier={1.3}
           >
-            {copy('homeGreeting').split('Kannada')[0]}
-            <Text style={{ color: '#91001B', fontStyle: 'italic' }}>
-              Kannada{copy('homeGreeting').split('Kannada')[1] || '?'}
-            </Text>
+            {streak}
           </Text>
         </View>
+      </View>
 
-        {/* ── BENTO GRID ── */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 40 }}>
-          <View style={{ flexDirection: 'row', gap: 16 }}>
-            {/* LEFT — Word of the Day */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+      >
+        <View style={{ paddingHorizontal: 24, paddingTop: 12 }}>
+          {/* Greeting line */}
+          <Text
+            style={{
+              fontFamily: Fonts.dmSans.medium,
+              fontSize: 14,
+              letterSpacing: 0.2,
+              color: Colors.tertiary,
+              marginBottom: 24,
+            }}
+            maxFontSizeMultiplier={1.4}
+          >
+            Namaskāra, {userName}
+          </Text>
+
+          {/* ── 1. WORD OF THE DAY ── */}
+          <View
+            style={{
+              backgroundColor: Colors.surfaceContainerLow,
+              borderRadius: Radius.xl,
+              padding: 24,
+              marginBottom: 16,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.bold,
+                fontSize: 11,
+                letterSpacing: 2,
+                color: Colors.tertiary,
+                textTransform: 'uppercase',
+                marginBottom: 14,
+              }}
+              maxFontSizeMultiplier={1.4}
+            >
+              Word of the day
+            </Text>
+            <Text
+              style={{
+                fontFamily: Fonts.notoSerifKannada.bold,
+                fontSize: 36,
+                lineHeight: 52,
+                color: Colors.primary,
+                marginBottom: 6,
+              }}
+              maxFontSizeMultiplier={1.3}
+              adjustsFontSizeToFit
+              numberOfLines={2}
+            >
+              {wordOfDayKn}
+            </Text>
+            <Text
+              style={{
+                fontFamily: Fonts.lora.italic,
+                fontSize: 15,
+                color: Colors.onSurface,
+                marginBottom: 4,
+              }}
+              maxFontSizeMultiplier={1.4}
+            >
+              {wordOfDay.transliteration}
+            </Text>
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.regular,
+                fontSize: 13,
+                color: Colors.tertiary,
+                marginBottom: 14,
+              }}
+              maxFontSizeMultiplier={1.4}
+            >
+              {wordOfDay.english}
+            </Text>
+            <Pressable
+              onPress={handleListenWordOfDay}
+              accessibilityRole="button"
+              accessibilityLabel={`Listen: ${wordOfDay.english}`}
+              hitSlop={8}
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                minHeight: 44,
+                alignSelf: 'flex-start',
+                opacity: pressed ? 0.6 : 1,
+              })}
+            >
+              <Icons.audio size={18} color={Colors.secondary} />
+              <Text
+                style={{
+                  fontFamily: Fonts.dmSans.bold,
+                  fontSize: 11,
+                  letterSpacing: 1.8,
+                  color: Colors.secondary,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Listen
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* ── 2. YOUR PROGRESS — lessons/8 ring ── */}
+          <Pressable
+            onPress={handleStartNext}
+            disabled={allDone || !nextLessonRealId}
+            accessibilityRole={nextLessonRealId ? 'button' : 'text'}
+            accessibilityLabel={`Progress: ${completedCount} of ${TOTAL_LESSON_SLOTS} lessons. Next: ${nextTitle}.`}
+            style={({ pressed }) => ({
+              backgroundColor: Colors.surfaceContainerHighest,
+              borderRadius: Radius.xl,
+              padding: 24,
+              marginBottom: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 22,
+              transform: [{ scale: pressed && nextLessonRealId ? 0.98 : 1 }],
+            })}
+          >
             <View
               style={{
-                flex: 1,
-                backgroundColor: '#FFFFFF',
-                borderRadius: 32,
-                paddingVertical: 24,
-                paddingHorizontal: 16,
+                width: ringSize,
+                height: ringSize,
                 alignItems: 'center',
-                shadowColor: '#1B1D0E',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.06,
-                shadowRadius: 32,
-                elevation: 4,
+                justifyContent: 'center',
               }}
             >
-              {/* Decorative blur circle */}
-              <View
+              <Svg
+                width={ringSize}
+                height={ringSize}
+                style={{ transform: [{ rotate: '-90deg' }] }}
+              >
+                <Circle
+                  cx={ringSize / 2}
+                  cy={ringSize / 2}
+                  r={ringR}
+                  stroke={Colors.surfaceDim}
+                  strokeWidth={ringStroke}
+                  fill="transparent"
+                />
+                <Circle
+                  cx={ringSize / 2}
+                  cy={ringSize / 2}
+                  r={ringR}
+                  stroke={Colors.primary}
+                  strokeWidth={ringStroke}
+                  fill="transparent"
+                  strokeDasharray={ringCirc}
+                  strokeDashoffset={ringOffset}
+                  strokeLinecap="round"
+                />
+              </Svg>
+              <Text
                 style={{
                   position: 'absolute',
-                  top: -20,
-                  right: -20,
-                  width: 80,
-                  height: 80,
-                  borderRadius: 40,
-                  backgroundColor: 'rgba(253,192,3,0.12)',
+                  fontFamily: Fonts.dmSans.bold,
+                  fontSize: 16,
+                  color: Colors.primary,
                 }}
-              />
+                maxFontSizeMultiplier={1.2}
+              >
+                {progressPercent}%
+              </Text>
+            </View>
+
+            <View style={{ flex: 1 }}>
               <Text
                 style={{
                   fontFamily: Fonts.dmSans.bold,
-                  fontSize: 9,
+                  fontSize: 11,
                   letterSpacing: 2,
-                  color: '#464646',
+                  color: Colors.tertiary,
                   textTransform: 'uppercase',
-                  marginBottom: 16,
-                }}
-              >
-                Word of the Day
-              </Text>
-              <Text
-                style={{
-                  fontFamily: Fonts.notoSerifKannada.bold,
-                  fontSize: 28,
-                  color: '#91001B',
-                  lineHeight: 44,
-                  paddingTop: 4,
-                  textAlign: 'center',
                   marginBottom: 6,
                 }}
-                numberOfLines={2}
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
+                maxFontSizeMultiplier={1.4}
               >
-                {wordOfDayKannadaForDisplay}
+                Your progress
               </Text>
               <Text
                 style={{
                   fontFamily: Fonts.dmSans.bold,
-                  fontSize: 14,
-                  color: '#1B1D0E',
-                  textAlign: 'center',
+                  fontSize: 18,
+                  color: Colors.onSurface,
                   marginBottom: 4,
                 }}
-                numberOfLines={2}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
+                maxFontSizeMultiplier={1.3}
               >
-                {wordOfDay.transliteration}
+                {completedCount} of {TOTAL_LESSON_SLOTS} lessons
               </Text>
               <Text
                 style={{
-                  fontFamily: Fonts.lora.italic,
-                  fontSize: 12,
-                  color: '#464646',
-                  textAlign: 'center',
-                  marginBottom: 14,
+                  fontFamily: Fonts.dmSans.regular,
+                  fontSize: 13,
+                  color: Colors.tertiary,
+                  lineHeight: 18,
                 }}
-                numberOfLines={1}
+                numberOfLines={2}
+                maxFontSizeMultiplier={1.4}
               >
-                {wordOfDay.english}
-              </Text>
-              {/* Divider */}
-              <View style={{ width: '100%', height: 1, backgroundColor: '#E5BDBB', opacity: 0.15, marginBottom: 16 }} />
-              {/* Listen button */}
-              <Pressable
-                onPress={handleListenWordOfDay}
-                accessibilityRole="button"
-                accessibilityLabel="Listen to the phrase"
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 8 }}
-              >
-                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"
-                    stroke="#785900"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-                <Text
-                  style={{
-                    fontFamily: Fonts.dmSans.bold,
-                    fontSize: 10,
-                    letterSpacing: 1.8,
-                    color: '#785900',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Listen
-                </Text>
-              </Pressable>
-              {!hasCompletedPhrases && (
-                <Pressable
-                  onPress={handleStartNext}
-                  accessibilityRole="link"
-                  accessibilityLabel="Try your first lesson"
-                  style={{ marginTop: 6, paddingVertical: 6, paddingHorizontal: 8, minHeight: 32, alignItems: 'center' }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: Fonts.dmSans.medium,
-                      fontSize: 11,
-                      color: '#91001B',
-                      textAlign: 'center',
-                    }}
-                  >
-                    Try your first lesson →
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-
-            {/* RIGHT COLUMN — Goal + Next Lesson */}
-            <View style={{ flex: 1, gap: 16 }}>
-              {/* Daily Goal */}
-              <View
-                style={{
-                  backgroundColor: '#F5F5DC',
-                  borderRadius: 32,
-                  padding: 20,
-                  alignItems: 'center',
-                }}
-              >
-                <View style={{ width: '100%', marginBottom: 12 }}>
-                  <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: 13, color: '#1B1D0E', letterSpacing: 0.3 }}>
-                    Daily Goal
-                  </Text>
-                </View>
-                {/* Progress ring */}
-                <View style={{ width: goalSize, height: goalSize, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                  <Svg width={goalSize} height={goalSize} style={{ transform: [{ rotate: '-90deg' }] }}>
-                    <Circle cx={goalSize / 2} cy={goalSize / 2} r={goalR} stroke="#E4E4CC" strokeWidth={goalStroke} fill="transparent" />
-                    <Circle cx={goalSize / 2} cy={goalSize / 2} r={goalR} stroke="#FDC003" strokeWidth={goalStroke} fill="transparent" strokeDasharray={goalCirc} strokeDashoffset={goalOffset} strokeLinecap="round" />
-                  </Svg>
-                  <Text style={{ position: 'absolute', fontFamily: Fonts.dmSans.bold, fontSize: 17, color: '#785900' }}>
-                    {Math.round(goalPercent * 100)}%
-                  </Text>
-                </View>
-                {showDailyDone ? (
-                  <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 11, color: '#464646', textAlign: 'center' }}>
-                    Done for today 🎉
-                  </Text>
-                ) : (
-                  <Pressable
-                    onPress={handleStartNext}
-                    accessibilityRole="link"
-                    accessibilityLabel="Start today's lesson"
-                    style={{ paddingVertical: 4, paddingHorizontal: 4, minHeight: 32, alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 11, color: '#91001B', textAlign: 'center' }}>
-                      Start today's lesson →
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-
-              {/* Next Lesson — gradient red button or "all complete" message */}
-              {nextLesson ? (
-                <Pressable
-                  onPress={handleStartNext}
-                  style={({ pressed }) => ({
-                    backgroundColor: pressed ? '#8D0020' : '#91001B',
-                    borderRadius: 32,
-                    padding: 20,
-                    transform: [{ scale: pressed ? 0.96 : 1 }],
-                    shadowColor: '#91001B',
-                    shadowOffset: { width: 0, height: 12 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 20,
-                    elevation: 8,
-                  })}
-                >
-                  <View
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 12,
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: 14,
-                    }}
-                  >
-                    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                      <Path d="M8 5v14l11-7L8 5z" fill="#FFFFFF" />
-                    </Svg>
-                  </View>
-                  <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: 18, color: '#FFFFFF', marginBottom: 4 }}>
-                    {copy('nextLesson')}
-                  </Text>
-                  <Text style={{ fontFamily: Fonts.dmSans.regular, fontSize: 12, color: '#FFFFFF', opacity: 0.85, marginBottom: 12 }} numberOfLines={2}>
-                    {nextLesson.situation.title}
-                  </Text>
-                  <View style={{ alignSelf: 'flex-end' }}>
-                    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                      <Path d="M5 12h14M12 5l7 7-7 7" stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                    </Svg>
-                  </View>
-                </Pressable>
-              ) : (
-                <View
-                  style={{
-                    backgroundColor: '#F5F5DC',
-                    borderRadius: 32,
-                    padding: 20,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: Fonts.dmSans.bold,
-                      fontSize: 9,
-                      letterSpacing: 2,
-                      color: '#785900',
-                      textTransform: 'uppercase',
-                      marginBottom: 8,
-                    }}
-                  >
-                    All Caught Up
-                  </Text>
-                  <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 13, color: '#1B1D0E', lineHeight: 18 }}>
-                    You've completed every lesson! More coming soon.
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        </View>
-
-        {/* ── CONTINUE PRACTICE — review queue ── */}
-        {/* TODO: Replace with SRS due-queue when SRS lands */}
-        {hasReviewable && (
-          <View style={{ marginBottom: 40 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: 24, marginBottom: 16 }}>
-              <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: 22, color: '#1B1D0E' }}>
-                {copy('continuePractice')}
+                {allDone
+                  ? 'All caught up — more lessons coming soon.'
+                  : `Next: ${nextTitle} · ${ESTIMATED_MIN_PER_LESSON} min`}
               </Text>
             </View>
+          </Pressable>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 24, gap: 14 }}
-            >
-              {reviewableLessons.map((lesson) => (
-                <Pressable
-                  key={lesson.id}
-                  onPress={() => router.push(`/lesson/${lesson.id}`)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Review: ${lesson.situation.title}`}
-                  style={({ pressed }) => ({
-                    width: reviewCardW,
-                    backgroundColor: '#EAEAD1',
-                    borderRadius: 24,
-                    padding: 20,
-                    transform: [{ scale: pressed ? 0.96 : 1 }],
-                  })}
-                >
-                  <View
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 16,
-                      backgroundColor: '#FDC003',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: 14,
-                    }}
-                  >
-                    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                      <Path
-                        d="M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"
-                        stroke="#6C5000"
-                        strokeWidth={2.5}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </Svg>
-                  </View>
-                  <Text
-                    style={{
-                      fontFamily: Fonts.dmSans.bold,
-                      fontSize: 10,
-                      letterSpacing: 1.6,
-                      color: '#785900',
-                      textTransform: 'uppercase',
-                      marginBottom: 4,
-                    }}
-                  >
-                    Review
-                  </Text>
-                  <Text
-                    style={{ fontFamily: Fonts.dmSans.bold, fontSize: 14, color: '#1B1D0E' }}
-                    numberOfLines={2}
-                  >
-                    {lesson.situation.title}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* ── KARNATAKA HERITAGE — Full-width photo card ── */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+          {/* ── 3. EMERGENCY KANNADA GUIDE ── */}
           <Pressable
-            onPress={() => router.push('/heritage/hampi')}
+            onPress={() => router.push('/emergency')}
             accessibilityRole="button"
-            accessibilityLabel="Read about The Stones of Hampi"
+            accessibilityLabel="Stuck right now? Survival phrases for the auto, shop and street."
             style={({ pressed }) => ({
-              height: 200,
-              borderRadius: 40,
-              overflow: 'hidden',
-              backgroundColor: '#5C1A1A',
+              backgroundColor: Colors.surfaceContainerHighest,
+              borderRadius: Radius.xl,
+              padding: 20,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 16,
               transform: [{ scale: pressed ? 0.98 : 1 }],
             })}
           >
             <View
               style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 120,
-                backgroundColor: 'transparent',
-              }}
-            />
-            <View
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: '#7A2020',
-                opacity: 0.6,
-              }}
-            />
-            <View
-              style={{
-                position: 'absolute',
-                top: 20,
-                right: 30,
-                width: 100,
-                height: 140,
-                borderRadius: 8,
-                backgroundColor: '#A04030',
-                opacity: 0.4,
-              }}
-            />
-            <View
-              style={{
-                position: 'absolute',
-                top: 30,
-                left: 40,
-                width: 60,
-                height: 120,
-                borderRadius: 6,
-                backgroundColor: '#8B3025',
-                opacity: 0.3,
-              }}
-            />
-            <View
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                padding: 28,
+                width: 48,
+                height: 48,
+                borderRadius: Radius.lg,
+                backgroundColor: Colors.surfaceContainerHigh,
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
+              <Icons.emergency size={22} color={Colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
               <Text
                 style={{
                   fontFamily: Fonts.dmSans.bold,
-                  fontSize: 9,
-                  letterSpacing: 3,
-                  color: '#FFFFFF',
-                  opacity: 0.7,
-                  textTransform: 'uppercase',
-                  marginBottom: 6,
+                  fontSize: 16,
+                  color: Colors.primary,
+                  marginBottom: 2,
                 }}
+                maxFontSizeMultiplier={1.3}
               >
-                Karnataka Heritage
+                Stuck right now?
               </Text>
               <Text
                 style={{
-                  fontFamily: Fonts.dmSans.bold,
-                  fontSize: 20,
-                  color: '#FFFFFF',
+                  fontFamily: Fonts.dmSans.regular,
+                  fontSize: 13,
+                  color: Colors.tertiary,
+                  lineHeight: 18,
                 }}
+                numberOfLines={2}
+                maxFontSizeMultiplier={1.4}
               >
-                The Stones of Hampi
+                Survival phrases for the auto, shop & street
               </Text>
             </View>
+            <Icons.forward size={18} color={Colors.tertiary} />
           </Pressable>
         </View>
       </ScrollView>

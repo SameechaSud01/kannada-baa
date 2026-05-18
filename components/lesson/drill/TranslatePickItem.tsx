@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../../constants/colors';
 import { Fonts } from '../../../constants/fonts';
 import { Spacing, Radius } from '../../../constants/spacing';
+import { Icons } from '../../../constants/icons';
 import { deviceTtsAudioService } from '../../../services/audio/deviceTtsAudioService';
 import { DrillFeedback, type DrillResult } from './DrillFeedback';
 import type { Phrase } from '../../../constants/lessons/types';
@@ -180,14 +181,10 @@ export function TranslatePickItem({ target, distractors, onResolve }: TranslateP
 
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
                     {showRight && (
-                      <Text style={{ fontSize: 18, color: Colors.primaryContainer, fontFamily: Fonts.dmSans.bold }}>
-                        ✓
-                      </Text>
+                      <Icons.correct size={20} color={Colors.primaryContainer} />
                     )}
                     {showWrong && (
-                      <Text style={{ fontSize: 18, color: Colors.primaryContainer, fontFamily: Fonts.dmSans.bold }}>
-                        ✕
-                      </Text>
+                      <Icons.close size={20} color={Colors.primaryContainer} />
                     )}
                     <Pressable
                       onPress={(e) => {
@@ -206,7 +203,7 @@ export function TranslatePickItem({ target, distractors, onResolve }: TranslateP
                         justifyContent: 'center',
                       })}
                     >
-                      <Text style={{ fontSize: 16 }}>🔊</Text>
+                      <Icons.audio size={16} color={Colors.onSecondaryContainer} />
                     </Pressable>
                   </View>
                 </Pressable>
@@ -216,17 +213,26 @@ export function TranslatePickItem({ target, distractors, onResolve }: TranslateP
         </View>
 
         {result === 'correct' && (
-          <Text
+          <View
             style={{
-              fontFamily: Fonts.dmSans.medium,
-              fontSize: 13,
-              color: Colors.primaryContainer,
-              textAlign: 'center',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: Spacing.sm,
               marginTop: Spacing.lg,
             }}
           >
-            ✓ Correct
-          </Text>
+            <Icons.correct size={16} color={Colors.primaryContainer} />
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.medium,
+                fontSize: 13,
+                color: Colors.primaryContainer,
+              }}
+            >
+              Correct
+            </Text>
+          </View>
         )}
       </ScrollView>
 

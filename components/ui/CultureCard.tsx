@@ -13,8 +13,6 @@ export function CultureCard({ label, text }: CultureCardProps) {
     <View
       style={{
         backgroundColor: Colors.secondaryFixed,
-        borderWidth: 1,
-        borderColor: Colors.secondaryContainer,
         borderRadius: Radius.lg,
         padding: Spacing.lg,
       }}
@@ -24,7 +22,7 @@ export function CultureCard({ label, text }: CultureCardProps) {
           fontFamily: Fonts.dmSans.bold,
           fontSize: 9,
           letterSpacing: 1.2,
-          color: '#8D6000',
+          color: Colors.onSecondaryContainer,
           textTransform: 'uppercase',
           marginBottom: Spacing.sm,
         }}

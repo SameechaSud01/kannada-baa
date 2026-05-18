@@ -1,101 +1,28 @@
-import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { Spacing, Radius } from '../../constants/spacing';
+import { Icons } from '../../constants/icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { Icon as TablerIcon } from '@tabler/icons-react-native';
 
-const TAB_ICONS: Record<string, { active: (color: string) => React.ReactElement; label: string }> = {
-  index: {
-    label: 'Home',
-    active: (color: string) => (
-      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-        <Path
-          d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"
-          fill={color === Colors.primaryContainer ? Colors.primaryContainer : 'none'}
-          stroke={color}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </Svg>
-    ),
-  },
-  learn: {
-    label: 'Learn',
-    active: (color: string) => (
-      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-        <Path
-          d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"
-          stroke={color}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <Path
-          d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
-          fill={color === Colors.primaryContainer ? Colors.primaryContainer : 'none'}
-          stroke={color}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </Svg>
-    ),
-  },
-  practice: {
-    label: 'Practice',
-    active: (color: string) => (
-      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-        <Path
-          d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z"
-          fill={color === Colors.primaryContainer ? Colors.primaryContainer : 'none'}
-          stroke={color}
-          strokeWidth={2}
-        />
-        <Path
-          d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"
-          stroke={color}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </Svg>
-    ),
-  },
-  profile: {
-    label: 'Profile',
-    active: (color: string) => (
-      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-        <Path
-          d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
-          stroke={color}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <Circle
-          cx={12}
-          cy={7}
-          r={4}
-          fill={color === Colors.primaryContainer ? Colors.primaryContainer : 'none'}
-          stroke={color}
-          strokeWidth={2}
-        />
-      </Svg>
-    ),
-  },
+const TAB_ICONS: Record<string, { icon: TablerIcon; label: string }> = {
+  index: { icon: Icons.tabHome, label: 'Home' },
+  learn: { icon: Icons.tabLearn, label: 'Learn' },
+  practice: { icon: Icons.tabPractice, label: 'Practice' },
+  profile: { icon: Icons.tabProfile, label: 'Profile' },
 };
 
-export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+const TAB_ICON_SIZE = 19; // Spec 03 §sizing
+
+export function TabBar({ state, navigation }: BottomTabBarProps) {
   return (
     <View
       style={{
         flexDirection: 'row',
-        backgroundColor: Colors.surface,
-        borderTopWidth: 0.5,
-        borderTopColor: '#D4CDB8',
+        // Tonal step (surface-container-low) separates the tab bar from page
+        // content — no border (§2 No-Line).
+        backgroundColor: Colors.surfaceContainerLow,
         paddingBottom: Spacing.xl,
         paddingTop: Spacing.md,
       }}
@@ -104,8 +31,10 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         const isFocused = state.index === index;
         const tabInfo = TAB_ICONS[route.name];
         if (!tabInfo) return null;
+        const Icon = tabInfo.icon;
 
         const color = isFocused ? Colors.primaryContainer : Colors.tertiary;
+        const iconColor = isFocused ? Colors.onPrimary : color;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -123,6 +52,9 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           <Pressable
             key={route.key}
             onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={tabInfo.label}
+            accessibilityState={{ selected: isFocused }}
             style={{
               flex: 1,
               alignItems: 'center',
@@ -139,7 +71,7 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 justifyContent: 'center',
               }}
             >
-              {tabInfo.active(isFocused ? '#FFFFFF' : color)}
+              <Icon size={TAB_ICON_SIZE} color={iconColor} strokeWidth={2} />
             </View>
             <Text
               style={{

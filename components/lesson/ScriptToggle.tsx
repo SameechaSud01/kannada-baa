@@ -28,15 +28,10 @@ export function ScriptToggle({ activeMode, onToggle }: ScriptToggleProps) {
               flex: 1,
               paddingVertical: Spacing.sm,
               borderRadius: Radius.sm - 2,
+              // Active pill = solid tonal step (surface-highest) on container-high
+              // bg. Inactive = transparent. No border, no shadow (§2/§4).
               backgroundColor: isActive ? Colors.surfaceContainerHighest : 'transparent',
-              borderWidth: isActive ? 0.5 : 0,
-              borderColor: Colors.outlineVariant,
               alignItems: 'center',
-              shadowColor: isActive ? '#000' : 'transparent',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: isActive ? 0.06 : 0,
-              shadowRadius: 2,
-              elevation: isActive ? 1 : 0,
             }}
           >
             <Text

@@ -3,6 +3,7 @@ import { View, Text, TextInput } from 'react-native';
 import { Colors } from '../../../constants/colors';
 import { Fonts } from '../../../constants/fonts';
 import { Spacing, Radius } from '../../../constants/spacing';
+import { Icons } from '../../../constants/icons';
 import { transliterationMatches } from '../../../services/text/transliterationMatch';
 import type { Phrase } from '../../../constants/lessons/types';
 
@@ -57,17 +58,9 @@ export function TypedResponse({
           }}
         />
         {matched && (
-          <Text
-            style={{
-              fontSize: 20,
-              color: Colors.primaryContainer,
-              fontFamily: Fonts.dmSans.bold,
-              marginLeft: Spacing.sm,
-            }}
-            accessibilityLabel="Match"
-          >
-            ✓
-          </Text>
+          <View style={{ marginLeft: Spacing.sm }} accessibilityLabel="Match">
+            <Icons.correct size={20} color={Colors.primaryContainer} />
+          </View>
         )}
       </View>
     </View>

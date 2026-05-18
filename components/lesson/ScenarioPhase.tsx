@@ -33,8 +33,6 @@ export function ScenarioPhase({ lesson, onContinue }: ScenarioPhaseProps) {
           style={{
             backgroundColor: Colors.secondaryFixed,
             borderRadius: Radius.xl,
-            borderWidth: 0.5,
-            borderColor: Colors.outlineVariant,
             paddingVertical: Spacing.xxxl + Spacing.md,
             paddingHorizontal: Spacing.lg,
             marginBottom: Spacing.xxl,

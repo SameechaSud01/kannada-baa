@@ -1,0 +1,80 @@
+{
+  "_warning": "[Unverified] All Kannada and romanisation in this file is placeholder. Must be verified by a Kannada speaker before ship. Audio keys are TTS-served at runtime by deviceTtsAudioService.",
+  "groups": [
+    {
+      "id": "auto",
+      "label": "Auto / cab",
+      "icon": "auto",
+      "items": [
+        {
+          "kn": "ಇಲ್ಲಿ ನಿಲ್ಲಿಸಿ",
+          "roman": "Illi nillisi",
+          "en": "Stop here",
+          "audio": "ಇಲ್ಲಿ ನಿಲ್ಲಿಸಿ"
+        },
+        {
+          "kn": "ಮೀಟರ್ ಹಾಕಿ",
+          "roman": "Meter haaki",
+          "en": "Please put the meter on",
+          "audio": "ಮೀಟರ್ ಹಾಕಿ"
+        },
+        {
+          "kn": "ಎಷ್ಟು?",
+          "roman": "Eshtu?",
+          "en": "How much is it?",
+          "audio": "ಎಷ್ಟು"
+        }
+      ]
+    },
+    {
+      "id": "trouble",
+      "label": "In trouble",
+      "icon": "trouble",
+      "items": [
+        {
+          "kn": "ದಯವಿಟ್ಟು ಸಹಾಯ ಮಾಡಿ",
+          "roman": "Dayavittu sahaaya maadi",
+          "en": "Please help",
+          "audio": "ದಯವಿಟ್ಟು ಸಹಾಯ ಮಾಡಿ"
+        },
+        {
+          "kn": "ನನಗೆ ಕನ್ನಡ ಬರಲ್ಲ",
+          "roman": "Nanage Kannada baralla",
+          "en": "I don't know Kannada",
+          "audio": "ನನಗೆ ಕನ್ನಡ ಬರಲ್ಲ"
+        },
+        {
+          "kn": "ಸ್ವಲ್ಪ ನಿಧಾನವಾಗಿ",
+          "roman": "Swalpa nidhanavagi",
+          "en": "Slowly, please",
+          "audio": "ಸ್ವಲ್ಪ ನಿಧಾನವಾಗಿ"
+        }
+      ]
+    },
+    {
+      "id": "basics",
+      "label": "Basics",
+      "icon": "basics",
+      "items": [
+        {
+          "kn": "ಎಲ್ಲಿ?",
+          "roman": "Elli?",
+          "en": "Where?",
+          "audio": "ಎಲ್ಲಿ"
+        },
+        {
+          "kn": "ಬೇಡ",
+          "roman": "Beda",
+          "en": "No, don't want",
+          "audio": "ಬೇಡ"
+        },
+        {
+          "kn": "ಪರವಾಗಿಲ್ಲ",
+          "roman": "Paravagilla",
+          "en": "It's okay",
+          "audio": "ಪರವಾಗಿಲ್ಲ"
+        }
+      ]
+    }
+  ]
+}

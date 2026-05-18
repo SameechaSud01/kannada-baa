@@ -32,8 +32,6 @@ export function PhraseCard({
       style={{
         backgroundColor: Colors.surfaceContainerHighest,
         borderRadius: Radius.xl,
-        borderWidth: 0.5,
-        borderColor: Colors.outlineVariant,
         padding: Spacing.xxl,
         alignItems: 'center',
       }}

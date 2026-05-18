@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../../constants/colors';
 import { Fonts } from '../../../constants/fonts';
 import { Spacing, Radius } from '../../../constants/spacing';
+import { Icons } from '../../../constants/icons';
 import { PhaseHeader } from '../PhaseHeader';
 import { TypedResponse } from './TypedResponse';
 import { SpokenResponse } from './SpokenResponse';
@@ -140,23 +141,30 @@ export function OutputPhase({ lesson, onAdvance }: OutputPhaseProps) {
           style={{
             backgroundColor: Colors.surfaceContainerHighest,
             borderRadius: Radius.lg,
-            borderWidth: 0.5,
-            borderColor: Colors.outlineVariant,
             padding: Spacing.lg,
             marginBottom: Spacing.lg,
           }}
         >
-          <Text
+          <View
             style={{
-              fontFamily: Fonts.dmSans.medium,
-              fontSize: 12,
-              color: Colors.tertiary,
-              letterSpacing: 0.5,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: Spacing.sm,
               marginBottom: Spacing.sm,
             }}
           >
-            🔊 They say:
-          </Text>
+            <Icons.audio size={14} color={Colors.tertiary} />
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.medium,
+                fontSize: 12,
+                color: Colors.tertiary,
+                letterSpacing: 0.5,
+              }}
+            >
+              They say:
+            </Text>
+          </View>
           <Text
             style={{
               fontFamily: Fonts.notoSerifKannada.regular,
@@ -204,11 +212,14 @@ export function OutputPhase({ lesson, onAdvance }: OutputPhaseProps) {
               paddingVertical: Spacing.sm,
               paddingHorizontal: Spacing.md,
               minHeight: 44,
-              justifyContent: 'center',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: Spacing.sm,
             })}
           >
+            <Icons.audio size={16} color={Colors.onSecondaryContainer} />
             <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 13, color: Colors.onSecondaryContainer }}>
-              🔊 Hear again
+              Hear again
             </Text>
           </Pressable>
         </View>

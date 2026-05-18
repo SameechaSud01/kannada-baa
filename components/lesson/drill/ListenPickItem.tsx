@@ -3,6 +3,7 @@ import { View, Text, Pressable, Animated, ScrollView } from 'react-native';
 import { Colors } from '../../../constants/colors';
 import { Fonts } from '../../../constants/fonts';
 import { Spacing, Radius } from '../../../constants/spacing';
+import { Icons } from '../../../constants/icons';
 import { deviceTtsAudioService } from '../../../services/audio/deviceTtsAudioService';
 import { DrillFeedback, type DrillResult } from './DrillFeedback';
 import type { Phrase } from '../../../constants/lessons/types';
@@ -95,15 +96,10 @@ export function ListenPickItem({ target, distractors, onResolve }: ListenPickIte
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: Spacing.lg,
-            shadowColor: Colors.primaryContainer,
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.25,
-            shadowRadius: 12,
-            elevation: 4,
             transform: [{ scale: pressed ? 0.96 : 1 }],
           })}
         >
-          <Text style={{ fontSize: 32 }}>🔊</Text>
+          <Icons.audio size={32} color={Colors.onPrimary} />
         </Pressable>
 
         <Text
@@ -172,14 +168,10 @@ export function ListenPickItem({ target, distractors, onResolve }: ListenPickIte
                     {opt.transliteration}
                   </Text>
                   {showRight && (
-                    <Text style={{ fontSize: 18, color: Colors.primaryContainer, fontFamily: Fonts.dmSans.bold }}>
-                      ✓
-                    </Text>
+                    <Icons.correct size={20} color={Colors.primaryContainer} />
                   )}
                   {showWrong && (
-                    <Text style={{ fontSize: 18, color: Colors.primaryContainer, fontFamily: Fonts.dmSans.bold }}>
-                      ✕
-                    </Text>
+                    <Icons.close size={20} color={Colors.primaryContainer} />
                   )}
                 </Pressable>
               </Animated.View>
@@ -188,17 +180,26 @@ export function ListenPickItem({ target, distractors, onResolve }: ListenPickIte
         </View>
 
         {result === 'correct' && (
-          <Text
+          <View
             style={{
-              fontFamily: Fonts.dmSans.medium,
-              fontSize: 13,
-              color: Colors.primaryContainer,
-              textAlign: 'center',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: Spacing.sm,
               marginTop: Spacing.lg,
             }}
           >
-            ✓ Correct
-          </Text>
+            <Icons.correct size={16} color={Colors.primaryContainer} />
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.medium,
+                fontSize: 13,
+                color: Colors.primaryContainer,
+              }}
+            >
+              Correct
+            </Text>
+          </View>
         )}
       </ScrollView>
 

@@ -4,8 +4,10 @@ import { Audio } from 'expo-av';
 import { Colors } from '../../../constants/colors';
 import { Fonts } from '../../../constants/fonts';
 import { Spacing, Radius } from '../../../constants/spacing';
+import { Icons } from '../../../constants/icons';
 import { deviceTtsAudioService } from '../../../services/audio/deviceTtsAudioService';
 import type { Phrase, SelfRating } from '../../../constants/lessons/types';
+import type { Icon as TablerIcon } from '@tabler/icons-react-native';
 
 type SayState = 'idle' | 'recording' | 'playing-back' | 'rating' | 'done';
 
@@ -14,10 +16,10 @@ interface SayItControlProps {
   onComplete: (rating: SelfRating) => void;
 }
 
-const RATING_OPTIONS: { value: SelfRating; emoji: string; label: string }[] = [
-  { value: 'hard', emoji: '😬', label: 'Hard' },
-  { value: 'ok', emoji: '🙂', label: 'OK' },
-  { value: 'easy', emoji: '💪', label: 'Easy' },
+const RATING_OPTIONS: { value: SelfRating; Icon: TablerIcon; label: string }[] = [
+  { value: 'hard', Icon: Icons.ratingHard, label: 'Hard' },
+  { value: 'ok', Icon: Icons.ratingOk, label: 'OK' },
+  { value: 'easy', Icon: Icons.ratingEasy, label: 'Easy' },
 ];
 
 export function SayItControl({ phrase, onComplete }: SayItControlProps) {
@@ -110,8 +112,6 @@ export function SayItControl({ phrase, onComplete }: SayItControlProps) {
               accessibilityLabel={opt.label}
               style={({ pressed }) => ({
                 backgroundColor: pressed ? Colors.surfaceContainerHigh : Colors.surfaceContainerHighest,
-                borderWidth: 1,
-                borderColor: Colors.outlineVariant,
                 borderRadius: Radius.lg,
                 paddingVertical: Spacing.md,
                 paddingHorizontal: Spacing.lg,
@@ -121,7 +121,7 @@ export function SayItControl({ phrase, onComplete }: SayItControlProps) {
                 justifyContent: 'center',
               })}
             >
-              <Text style={{ fontSize: 26 }}>{opt.emoji}</Text>
+              <opt.Icon size={26} color={Colors.primary} />
               <Text
                 style={{
                   fontFamily: Fonts.dmSans.regular,
@@ -139,16 +139,24 @@ export function SayItControl({ phrase, onComplete }: SayItControlProps) {
     );
   }
 
-  const label =
+  const labelText =
     state === 'idle'
-      ? '🎙 Say it'
+      ? 'Say it'
       : state === 'recording'
-        ? '⏹ Stop'
+        ? 'Stop'
         : state === 'playing-back'
-          ? '▶ Playing back…'
-          : 'Done ✓';
+          ? 'Playing back…'
+          : 'Done';
+
+  const LeadingIcon: TablerIcon | null =
+    state === 'idle' || state === 'recording'
+      ? Icons.mic
+      : state === 'done'
+        ? Icons.correct
+        : null;
 
   const tappable = state === 'idle' || state === 'recording';
+  const iconColor = state === 'recording' ? Colors.onPrimary : Colors.primaryContainer;
 
   return (
     <View style={{ alignItems: 'center', marginTop: Spacing.lg }}>
@@ -156,7 +164,7 @@ export function SayItControl({ phrase, onComplete }: SayItControlProps) {
         onPress={tappable ? handleTap : undefined}
         disabled={!tappable}
         accessibilityRole="button"
-        accessibilityLabel={label}
+        accessibilityLabel={labelText}
         style={({ pressed }) => ({
           backgroundColor:
             state === 'done'
@@ -171,9 +179,13 @@ export function SayItControl({ phrase, onComplete }: SayItControlProps) {
           paddingHorizontal: Spacing.xl,
           minHeight: 44,
           minWidth: 44,
+          flexDirection: 'row',
+          alignItems: 'center',
           justifyContent: 'center',
+          gap: Spacing.sm,
         })}
       >
+        {LeadingIcon && <LeadingIcon size={16} color={iconColor} />}
         <Text
           style={{
             fontFamily: Fonts.dmSans.medium,
@@ -181,7 +193,7 @@ export function SayItControl({ phrase, onComplete }: SayItControlProps) {
             color: state === 'recording' ? Colors.onPrimary : Colors.primaryContainer,
           }}
         >
-          {label}
+          {labelText}
         </Text>
       </Pressable>
     </View>

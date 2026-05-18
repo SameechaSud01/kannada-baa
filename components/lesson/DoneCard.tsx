@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { Spacing, Radius } from '../../constants/spacing';
+import { Icons } from '../../constants/icons';
 import type { Lesson } from '../../constants/lessons/types';
 import type { DrillAttempt } from '../../hooks/useLessonRunner';
 import { useProgressStore } from '../../stores/progressStore';
@@ -72,34 +73,25 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
         </Text>
 
         {/* Stats block */}
-        <View style={{ alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xl }}>
-          <Text
-            style={{
-              fontFamily: Fonts.dmSans.medium,
-              fontSize: 15,
-              color: Colors.onSurface,
-            }}
-          >
-            📚 {phraseCount} {phraseCount === 1 ? 'phrase' : 'phrases'} learned
-          </Text>
-          <Text
-            style={{
-              fontFamily: Fonts.dmSans.medium,
-              fontSize: 15,
-              color: Colors.onSurface,
-            }}
-          >
-            🎯 {correctCount} of {totalDrills} drills correct
-          </Text>
-          <Text
-            style={{
-              fontFamily: Fonts.dmSans.medium,
-              fontSize: 15,
-              color: Colors.onSurface,
-            }}
-          >
-            🗣 You spoke Kannada today
-          </Text>
+        <View style={{ alignItems: 'flex-start', alignSelf: 'center', gap: Spacing.sm, marginBottom: Spacing.xl }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+            <Icons.tabLearn size={18} color={Colors.primary} />
+            <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 15, color: Colors.onSurface }}>
+              {phraseCount} {phraseCount === 1 ? 'phrase' : 'phrases'} learned
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+            <Icons.tabPractice size={18} color={Colors.primary} />
+            <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 15, color: Colors.onSurface }}>
+              {correctCount} of {totalDrills} drills correct
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+            <Icons.mic size={18} color={Colors.primary} />
+            <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 15, color: Colors.onSurface }}>
+              You spoke Kannada today
+            </Text>
+          </View>
         </View>
 
         {/* Real-world prompt card */}
@@ -107,8 +99,6 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
           style={{
             backgroundColor: Colors.secondaryFixed,
             borderRadius: Radius.xl,
-            borderWidth: 0.5,
-            borderColor: Colors.outlineVariant,
             padding: Spacing.xxl,
             marginBottom: Spacing.lg,
           }}
@@ -187,9 +177,12 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
             transform: [{ scale: pressed && !intentMarked ? 0.96 : 1 }],
           })}
         >
-          <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 15, color: Colors.onPrimary }}>
-            {intentMarked ? 'Committed ✓' : "I'll try this in real life"}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+            {intentMarked && <Icons.correct size={16} color={Colors.onPrimary} />}
+            <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 15, color: Colors.onPrimary }}>
+              {intentMarked ? 'Committed' : "I'll try this in real life"}
+            </Text>
+          </View>
         </Pressable>
 
         <Pressable

@@ -25,8 +25,6 @@ export function LessonCard({
     <View
       style={{
         backgroundColor: Colors.surfaceContainerHighest,
-        borderWidth: 0.5,
-        borderColor: Colors.outlineVariant,
         borderRadius: Radius.lg,
         padding: Spacing.lg,
       }}
