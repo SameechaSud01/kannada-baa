@@ -18,8 +18,6 @@ import { supabase } from '../services/api/supabase';
 import { Audio } from 'expo-av';
 import { isKannadaVoiceAvailable } from '../services/audio/deviceTtsAudioService';
 
-import '../global.css';
-
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
