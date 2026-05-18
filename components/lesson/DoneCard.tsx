@@ -23,18 +23,11 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
   const totalDrills = drillAttempts.length;
   const phraseCount = lesson.intake.length;
 
-  const completedAlready = useProgressStore((s) => s.completedLessons.includes(lesson.id));
   const completeLesson = useProgressStore((s) => s.completeLesson);
   const updateStreak = useProgressStore((s) => s.updateStreak);
   const recordActivity = useProgressStore((s) => s.recordActivity);
 
   useEffect(() => {
-    // IMPORTANT: completeLesson() in progressStore over-increments xp,
-    // totalPhrasesLearned, totalMinutesPracticed on duplicate calls
-    // (only the completedLessons array is deduped at the action level).
-    // The completedAlready check above is the load-bearing guard against
-    // this bug. Do not call this useEffect without it.
-    if (completedAlready) return;
     const score = totalDrills > 0 ? Math.round((correctCount / totalDrills) * 100) : 0;
     completeLesson(lesson.id, score, phraseCount, 0);
     updateStreak();

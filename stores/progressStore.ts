@@ -52,15 +52,13 @@ export const useProgressStore = create<ProgressState>()(
 
       completeLesson: (lessonId, score, phrasesLearned, minutesPracticed) =>
         set((state) => {
-          // Streak and lastActiveDate are intentionally not updated here.
-          // Call updateStreak() separately at the call site — keeping
-          // streak logic in one place under one rule.
-          const completed = state.completedLessons.includes(lessonId)
-            ? state.completedLessons
-            : [...state.completedLessons, lessonId];
+          // Idempotent: re-entering a completed lesson must not double-count.
+          // Streak and lastActiveDate are intentionally not updated here —
+          // call updateStreak() separately to keep streak logic in one place.
+          if (state.completedLessons.includes(lessonId)) return state;
           const xpAward = score >= 80 ? 20 : 10;
           return {
-            completedLessons: completed,
+            completedLessons: [...state.completedLessons, lessonId],
             xp: state.xp + xpAward,
             totalPhrasesLearned: state.totalPhrasesLearned + phrasesLearned,
             totalMinutesPracticed: state.totalMinutesPracticed + minutesPracticed,
