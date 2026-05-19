@@ -1,3 +1,8 @@
+// TODO(opposites-game): Rewrite this game's styling. All files under src/games/opposites/
+// use NativeWind `className` props, but NativeWind was removed from the project in f5ee1d2.
+// Result: className is a no-op prop at runtime (screens render unstyled) and TypeScript
+// errors on every usage. Convert to inline style={{...}} with Colors/Spacing/Fonts tokens
+// per CLAUDE.md, using moderateScale() for sizing.
 import React from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
