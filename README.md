@@ -1,6 +1,6 @@
 # Kannada Baa
 
-A mobile app for learning Kannada — built with Expo (SDK 54), Expo Router, React Native 0.81, NativeWind, Zustand, TanStack Query, and Supabase.
+A mobile app for learning Kannada — built with Expo (SDK 54), Expo Router, React Native 0.81, Zustand, TanStack Query, and Supabase. Styling is inline `style={{...}}` objects drawing from token files in `constants/`.
 
 > **For Claude Code:** this README is the source of truth for local setup and project conventions. The repo's `.claude/CLAUDE.md` is gitignored and not shared — everything you need is here.
 
@@ -150,7 +150,7 @@ This section is what Claude Code needs to make changes safely. Follow these rule
 - Handle loading, error, and empty states explicitly. Never swallow errors silently.
 
 ### Styling
-- NativeWind (Tailwind) + a tokens file in `constants/` (colors, spacing, fonts).
+- Inline `style={{...}}` objects drawing values from the tokens file in `constants/` (colors, spacing, fonts).
 - Dark mode colors via tokens, never hex literals in components.
 - No inline `style={{...}}` for more than one or two dynamic props.
 
