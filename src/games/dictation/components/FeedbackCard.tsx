@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Text, View } from 'react-native';
 import { Colors } from '../../../../constants/colors';
 import { Fonts } from '../../../../constants/fonts';
+import { Icons } from '../../../../constants/icons';
 import { Spacing } from '../../../../constants/spacing';
 import type { AnswerState } from '../types';
 
@@ -12,14 +13,19 @@ type Props = {
   kannadaWord: string;
 };
 
-function verdictText(answerState: AnswerState, score: number): string {
-  if (answerState === 'correct') return '✓ exact match!';
+type VerdictParts = {
+  Icon: (typeof Icons)[keyof typeof Icons] | null;
+  text: string;
+};
+
+function verdictParts(answerState: AnswerState, score: number): VerdictParts {
+  if (answerState === 'correct') return { Icon: Icons.correct, text: 'exact match!' };
   if (answerState === 'partial') {
-    if (score >= 80) return '✓ very close!';
-    if (score >= 60) return '~ close enough';
-    return '~ not quite';
+    if (score >= 80) return { Icon: Icons.correct, text: 'very close!' };
+    if (score >= 60) return { Icon: null, text: '~ close enough' };
+    return { Icon: null, text: '~ not quite' };
   }
-  return '✗ incorrect';
+  return { Icon: Icons.wrong, text: 'incorrect' };
 }
 
 function verdictColor(answerState: AnswerState): string {
@@ -47,11 +53,17 @@ const FeedbackCard: React.FC<Props> = ({ answerState, score, accepted, kannadaWo
 
   if (answerState === 'unanswered') return null;
 
+  const { Icon, text } = verdictParts(answerState, score);
+  const color = verdictColor(answerState);
+
   return (
     <View style={{ gap: Spacing.md }}>
-      <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 15, color: verdictColor(answerState) }}>
-        {verdictText(answerState, score)}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+        {Icon && <Icon size={16} color={color} />}
+        <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: 15, color }}>
+          {text}
+        </Text>
+      </View>
 
       {score < 100 && (
         <View style={{ gap: Spacing.xs }}>

@@ -4,6 +4,7 @@ import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '@/constants/colors';
 import { Spacing, Radius } from '@/constants/spacing';
 import { Fonts } from '@/constants/fonts';
+import { Icons } from '@/constants/icons';
 
 type Props = {
   word: string;
@@ -71,12 +72,16 @@ const QuestionCard: React.FC<Props> = ({ word, tr, meaning, streak }) => (
           position: 'absolute',
           top: Spacing.md,
           right: Spacing.md,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: moderateScale(4),
           backgroundColor: Colors.secondaryFixed,
           borderRadius: Radius.full,
           paddingHorizontal: Spacing.sm,
           paddingVertical: moderateScale(2),
         }}
       >
+        <Icons.streak size={moderateScale(12)} color={Colors.secondary} />
         <Text
           style={{
             color: Colors.secondary,
@@ -84,7 +89,7 @@ const QuestionCard: React.FC<Props> = ({ word, tr, meaning, streak }) => (
             fontFamily: Fonts.dmSans.bold,
           }}
         >
-          🔥 {streak}
+          {streak}
         </Text>
       </View>
     )}

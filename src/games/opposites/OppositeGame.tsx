@@ -11,6 +11,7 @@ import QuestionCard from './components/QuestionCard';
 import OptionGrid from './components/OptionGrid';
 import FeedbackBanner from './components/FeedbackBanner';
 import ResultScreen from './components/ResultScreen';
+import { ExitBackButton } from '@/components/ui/ExitBackButton';
 
 const OppositeGame: React.FC = () => {
   const {
@@ -31,6 +32,7 @@ const OppositeGame: React.FC = () => {
   if (phase === 'result') {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }}>
+        <ExitBackButton />
         <ResultScreen score={score} total={totalQuestions} onReplay={restart} />
       </SafeAreaView>
     );
@@ -50,8 +52,13 @@ const OppositeGame: React.FC = () => {
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
+            gap: Spacing.md,
           }}
         >
+          <ExitBackButton
+            floating={false}
+            message="Exit this game? You'll lose your progress."
+          />
           <Text
             style={{
               fontSize: moderateScale(14),

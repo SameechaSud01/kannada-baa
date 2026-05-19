@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '@/constants/colors';
 import { Spacing, Radius } from '@/constants/spacing';
 import { Fonts } from '@/constants/fonts';
+import { Icons } from '@/constants/icons';
 
 type Props = {
   score: number;
@@ -11,12 +13,12 @@ type Props = {
   onReplay: () => void;
 };
 
-function getEmoji(score: number, total: number): string {
+function getResultIcon(score: number, total: number) {
   const ratio = score / total;
-  if (ratio === 1) return '🎉';
-  if (ratio >= 0.7) return '😊';
-  if (ratio >= 0.4) return '😅';
-  return '📚';
+  if (ratio === 1) return Icons.lessonDone;
+  if (ratio >= 0.7) return Icons.ratingEasy;
+  if (ratio >= 0.4) return Icons.ratingOk;
+  return Icons.tabLearn;
 }
 
 function getTitle(score: number, total: number): string {
@@ -27,7 +29,10 @@ function getTitle(score: number, total: number): string {
   return 'Keep learning!';
 }
 
-const ResultScreen: React.FC<Props> = ({ score, total, onReplay }) => (
+const ResultScreen: React.FC<Props> = ({ score, total, onReplay }) => {
+  const router = useRouter();
+  const ResultIcon = getResultIcon(score, total);
+  return (
   <View
     style={{
       flex: 1,
@@ -37,7 +42,7 @@ const ResultScreen: React.FC<Props> = ({ score, total, onReplay }) => (
       gap: Spacing.lg,
     }}
   >
-    <Text style={{ fontSize: moderateScale(48) }}>{getEmoji(score, total)}</Text>
+    <ResultIcon size={moderateScale(24)} color={Colors.primary} />
     <Text
       style={{
         fontSize: moderateScale(20),
@@ -86,7 +91,52 @@ const ResultScreen: React.FC<Props> = ({ score, total, onReplay }) => (
         Play again ▸
       </Text>
     </Pressable>
+    <View style={{ flexDirection: 'row', gap: Spacing.md, width: '100%' }}>
+      <Pressable
+        onPress={() => router.replace('/(tabs)/practice')}
+        style={({ pressed }) => ({
+          flex: 1,
+          backgroundColor: Colors.surfaceContainerHighest,
+          borderRadius: Radius.lg,
+          paddingVertical: moderateScale(14),
+          alignItems: 'center',
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        <Text
+          style={{
+            color: Colors.onSurface,
+            fontFamily: Fonts.dmSans.bold,
+            fontSize: moderateScale(15),
+          }}
+        >
+          Back to games
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={() => router.replace('/(tabs)/')}
+        style={({ pressed }) => ({
+          flex: 1,
+          backgroundColor: Colors.surfaceContainerHighest,
+          borderRadius: Radius.lg,
+          paddingVertical: moderateScale(14),
+          alignItems: 'center',
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        <Text
+          style={{
+            color: Colors.onSurface,
+            fontFamily: Fonts.dmSans.bold,
+            fontSize: moderateScale(15),
+          }}
+        >
+          Back home
+        </Text>
+      </Pressable>
+    </View>
   </View>
-);
+  );
+};
 
 export default ResultScreen;

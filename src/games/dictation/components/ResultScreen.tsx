@@ -1,7 +1,10 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../../../constants/colors';
 import { Fonts } from '../../../../constants/fonts';
+import { Icons } from '../../../../constants/icons';
 import { Radius, Spacing } from '../../../../constants/spacing';
 
 type Props = {
@@ -11,11 +14,11 @@ type Props = {
   onReplay: () => void;
 };
 
-function emoji(avg: number): string {
-  if (avg === 100) return '🎯';
-  if (avg >= 80) return '😊';
-  if (avg >= 55) return '😐';
-  return '😔';
+function resultIcon(avg: number) {
+  if (avg === 100) return Icons.tabPractice;
+  if (avg >= 80) return Icons.ratingEasy;
+  if (avg >= 55) return Icons.ratingOk;
+  return Icons.ratingHard;
 }
 
 function title(avg: number): string {
@@ -26,11 +29,13 @@ function title(avg: number): string {
 }
 
 const ResultScreen: React.FC<Props> = ({ sessionAvg, answeredCount, totalWords, onReplay }) => {
+  const router = useRouter();
   const skipped = totalWords - answeredCount;
+  const ResultIcon = resultIcon(sessionAvg);
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xxl, gap: Spacing.lg }}>
-      <Text style={{ fontSize: 52 }}>{emoji(sessionAvg)}</Text>
+      <ResultIcon size={moderateScale(24)} color={Colors.primary} />
       <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: 22, color: Colors.onSurface }}>
         {title(sessionAvg)}
       </Text>
@@ -61,6 +66,38 @@ const ResultScreen: React.FC<Props> = ({ sessionAvg, answeredCount, totalWords, 
           play again
         </Text>
       </Pressable>
+      <View style={{ flexDirection: 'row', gap: Spacing.md, width: '100%' }}>
+        <Pressable
+          onPress={() => router.replace('/(tabs)/practice')}
+          style={({ pressed }) => ({
+            flex: 1,
+            backgroundColor: Colors.surfaceContainerHighest,
+            borderRadius: Radius.lg,
+            paddingVertical: Spacing.lg,
+            alignItems: 'center',
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: 15, color: Colors.onSurface }}>
+            back to games
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.replace('/(tabs)/')}
+          style={({ pressed }) => ({
+            flex: 1,
+            backgroundColor: Colors.surfaceContainerHighest,
+            borderRadius: Radius.lg,
+            paddingVertical: Spacing.lg,
+            alignItems: 'center',
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: 15, color: Colors.onSurface }}>
+            back home
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 };

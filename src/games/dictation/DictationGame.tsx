@@ -10,6 +10,7 @@ import AudioButton from './components/AudioButton';
 import AnswerInput from './components/AnswerInput';
 import FeedbackCard from './components/FeedbackCard';
 import ResultScreen from './components/ResultScreen';
+import { ExitBackButton } from '../../../components/ui/ExitBackButton';
 
 export default function DictationGame() {
   const {
@@ -40,6 +41,7 @@ export default function DictationGame() {
   if (phase === 'result') {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }}>
+        <ExitBackButton />
         <ResultScreen
           sessionAvg={sessionAvg}
           answeredCount={answeredCount}
@@ -57,7 +59,11 @@ export default function DictationGame() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: Spacing.lg, paddingVertical: Spacing.lg, gap: Spacing.lg }}>
 
         {/* Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.md }}>
+          <ExitBackButton
+            floating={false}
+            message="Exit this game? You'll lose your progress."
+          />
           <Text style={{ fontFamily: Fonts.dmSans.regular, fontSize: 14, color: Colors.tertiary }}>
             Word{' '}
             <Text style={{ fontFamily: Fonts.dmSans.bold, color: Colors.onSurface }}>
