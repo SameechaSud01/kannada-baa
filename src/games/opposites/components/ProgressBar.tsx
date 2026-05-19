@@ -1,13 +1,27 @@
 import React from 'react';
 import { View } from 'react-native';
+import { moderateScale } from 'react-native-size-matters';
+import { Colors } from '@/constants/colors';
+import { Radius } from '@/constants/spacing';
 
 type Props = { current: number; total: number };
 
 const ProgressBar: React.FC<Props> = ({ current, total }) => (
-  <View className='h-1.5 w-full rounded-full bg-gray-200'>
+  <View
+    style={{
+      height: moderateScale(6),
+      width: '100%',
+      borderRadius: Radius.full,
+      backgroundColor: Colors.surfaceContainerHigh,
+    }}
+  >
     <View
-      className='h-full rounded-full bg-emerald-600'
-      style={{ width: `${(current / total) * 100}%` }}
+      style={{
+        height: '100%',
+        borderRadius: Radius.full,
+        backgroundColor: Colors.primary,
+        width: `${(current / total) * 100}%`,
+      }}
     />
   </View>
 );

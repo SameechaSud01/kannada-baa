@@ -1,5 +1,9 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { moderateScale } from 'react-native-size-matters';
+import { Colors } from '@/constants/colors';
+import { Spacing, Radius } from '@/constants/spacing';
+import { Fonts } from '@/constants/fonts';
 
 type Props = {
   score: number;
@@ -24,16 +28,63 @@ function getTitle(score: number, total: number): string {
 }
 
 const ResultScreen: React.FC<Props> = ({ score, total, onReplay }) => (
-  <View className='flex-1 items-center justify-center px-6 gap-y-4'>
-    <Text className='text-5xl'>{getEmoji(score, total)}</Text>
-    <Text className='text-xl font-bold text-gray-900'>{getTitle(score, total)}</Text>
-    <Text className='text-5xl font-bold text-emerald-600'>{score}</Text>
-    <Text className='text-sm text-gray-500'>out of {total} correct</Text>
+  <View
+    style={{
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: Spacing.xxl,
+      gap: Spacing.lg,
+    }}
+  >
+    <Text style={{ fontSize: moderateScale(48) }}>{getEmoji(score, total)}</Text>
+    <Text
+      style={{
+        fontSize: moderateScale(20),
+        fontFamily: Fonts.dmSans.bold,
+        color: Colors.onSurface,
+      }}
+    >
+      {getTitle(score, total)}
+    </Text>
+    <Text
+      style={{
+        fontSize: moderateScale(48),
+        fontFamily: Fonts.dmSans.bold,
+        color: Colors.primary,
+      }}
+    >
+      {score}
+    </Text>
+    <Text
+      style={{
+        fontSize: moderateScale(14),
+        color: Colors.tertiary,
+        fontFamily: Fonts.dmSans.regular,
+      }}
+    >
+      out of {total} correct
+    </Text>
     <Pressable
-      className='w-full bg-emerald-600 rounded-2xl py-3.5 items-center mt-4'
+      style={{
+        width: '100%',
+        backgroundColor: Colors.primary,
+        borderRadius: Radius.xl,
+        paddingVertical: moderateScale(14),
+        alignItems: 'center',
+        marginTop: Spacing.lg,
+      }}
       onPress={onReplay}
     >
-      <Text className='text-white font-bold text-base'>Play again ▸</Text>
+      <Text
+        style={{
+          color: Colors.onPrimary,
+          fontFamily: Fonts.dmSans.bold,
+          fontSize: moderateScale(16),
+        }}
+      >
+        Play again ▸
+      </Text>
     </Pressable>
   </View>
 );

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
+import { moderateScale } from 'react-native-size-matters';
 import OptionButton, { type OptionState } from './OptionButton';
 import type { Option, AnswerState } from '../types';
 
@@ -25,7 +26,13 @@ function deriveState(
 }
 
 const OptionGrid: React.FC<Props> = ({ opts, answerState, selectedOpt, correctAnswer, onSelect }) => (
-  <View className='flex-row flex-wrap gap-2.5'>
+  <View
+    style={{
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: moderateScale(10),
+    }}
+  >
     {opts.map((opt) => (
       <View key={opt.kn} style={{ width: '48%' }}>
         <OptionButton

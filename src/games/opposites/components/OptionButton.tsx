@@ -1,5 +1,9 @@
 import React from 'react';
-import { Pressable, View, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
+import { moderateScale } from 'react-native-size-matters';
+import { Colors } from '@/constants/colors';
+import { Spacing, Radius } from '@/constants/spacing';
+import { Fonts } from '@/constants/fonts';
 import type { Option } from '../types';
 
 export type OptionState = 'default' | 'correct' | 'wrong' | 'reveal' | 'disabled';
@@ -10,39 +14,83 @@ type Props = {
   onPress: () => void;
 };
 
-const STATE_CLASSES: Record<OptionState, { border: string; bg: string; text: string }> = {
-  default:  { border: 'border-gray-200',   bg: 'bg-white',       text: 'text-gray-900' },
-  correct:  { border: 'border-emerald-500', bg: 'bg-emerald-50',  text: 'text-emerald-900' },
-  wrong:    { border: 'border-red-400',     bg: 'bg-red-50',      text: 'text-red-900' },
-  reveal:   { border: 'border-emerald-500', bg: 'bg-emerald-50',  text: 'text-emerald-900' },
-  disabled: { border: 'border-gray-100',   bg: 'bg-gray-50',     text: 'text-gray-400' },
+type Palette = {
+  border: string;
+  bg: string;
+  knText: string;
+  glossText: string;
 };
 
-const GLOSS_CLASSES: Record<OptionState, string> = {
-  default:  'text-gray-500',
-  correct:  'text-emerald-700',
-  wrong:    'text-red-700',
-  reveal:   'text-emerald-700',
-  disabled: 'text-gray-400',
+const STATE_PALETTE: Record<OptionState, Palette> = {
+  default: {
+    border: Colors.outlineVariant,
+    bg: Colors.surface,
+    knText: Colors.onSurface,
+    glossText: Colors.tertiary,
+  },
+  correct: {
+    border: Colors.secondaryContainer,
+    bg: Colors.secondaryFixed,
+    knText: Colors.onSecondaryContainer,
+    glossText: Colors.secondary,
+  },
+  wrong: {
+    border: Colors.primary,
+    bg: Colors.surfaceDim,
+    knText: Colors.primary,
+    glossText: Colors.primary,
+  },
+  reveal: {
+    border: Colors.secondaryContainer,
+    bg: Colors.secondaryFixed,
+    knText: Colors.onSecondaryContainer,
+    glossText: Colors.secondary,
+  },
+  disabled: {
+    border: Colors.surfaceContainerHigh,
+    bg: Colors.surfaceContainerLow,
+    knText: Colors.tertiary,
+    glossText: Colors.tertiary,
+  },
 };
 
 const OptionButton: React.FC<Props> = ({ option, state, onPress }) => {
-  const { border, bg, text } = STATE_CLASSES[state];
+  const palette = STATE_PALETTE[state];
 
   return (
     <Pressable
       onPress={onPress}
       disabled={state !== 'default'}
-      className={`border rounded-2xl p-4 items-center justify-center ${border} ${bg}`}
-      style={{ minHeight: 80 }}
+      style={{
+        borderWidth: 1,
+        borderColor: palette.border,
+        borderRadius: Radius.xl,
+        padding: Spacing.lg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: palette.bg,
+        minHeight: moderateScale(80),
+      }}
     >
       <Text
-        className={`text-2xl text-center ${text}`}
-        style={{ fontFamily: 'NotoSansKannada_700Bold' }}
+        style={{
+          fontFamily: Fonts.notoSerifKannada.bold,
+          fontSize: moderateScale(24),
+          textAlign: 'center',
+          color: palette.knText,
+        }}
       >
         {option.kn}
       </Text>
-      <Text className={`text-xs text-center mt-1 ${GLOSS_CLASSES[state]}`}>
+      <Text
+        style={{
+          fontFamily: Fonts.dmSans.regular,
+          fontSize: moderateScale(12),
+          textAlign: 'center',
+          marginTop: Spacing.xs,
+          color: palette.glossText,
+        }}
+      >
         {option.en}
       </Text>
     </Pressable>
