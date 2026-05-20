@@ -182,7 +182,7 @@ export default function PracticeScreen() {
               game={game}
               completed={completed}
               hasUnlocked={hasUnlocked}
-              onPress={() => router.push(`/practice/${game.id}`)}
+              onPress={() => router.push(`/${game.id}`)}
             />
           ))}
         </View>
