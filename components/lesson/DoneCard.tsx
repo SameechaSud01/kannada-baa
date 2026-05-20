@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/colors';
@@ -17,6 +17,11 @@ import {
   StreakMilestoneTakeover,
   isStreakMilestone,
 } from '../../components/modals/instances/StreakMilestoneTakeover';
+import { Toast } from '../../components/modals/ToastHost';
+import {
+  useCompleteLessonMutation,
+  LessonNotRegisteredError,
+} from '../../hooks/useCompleteLessonMutation';
 
 const ESTIMATED_MIN_PER_LESSON = 5;
 
@@ -35,75 +40,113 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
   const totalDrills = drillAttempts.length;
   const phraseCount = lesson.intake.length;
 
-  const completeLesson = useProgressStore((s) => s.completeLesson);
-  const updateStreak = useProgressStore((s) => s.updateStreak);
-  const recordActivity = useProgressStore((s) => s.recordActivity);
   const markGoalCelebrated = useProgressStore((s) => s.markGoalCelebrated);
   const dailyGoalMinutes = useUserStore((s) => s.dailyGoalMinutes);
   const modal = useModal();
+  const mutation = useCompleteLessonMutation();
+  const attemptedRef = useRef(false);
+
+  const score = totalDrills > 0 ? Math.round((correctCount / totalDrills) * 100) : 0;
+
+  const runSave = () => {
+    if (mutation.isPending || mutation.isSuccess) return;
+
+    // Snapshot pre-completion state so we can detect milestone transitions
+    // after the server write succeeds. Captured synchronously before mutate
+    // to avoid races with any other source of state change.
+    const today = new Date().toISOString().split('T')[0];
+    const pre = useProgressStore.getState();
+    const prevStreak = pre.streak;
+    const prevTodayMinutes = pre.todayMinutesDate === today ? pre.todayMinutes : 0;
+
+    mutation.mutate(
+      {
+        slug: lesson.id,
+        score,
+        phrasesLearned: phraseCount,
+        minutesPracticed: ESTIMATED_MIN_PER_LESSON,
+      },
+      {
+        onSuccess: () => {
+          const post = useProgressStore.getState();
+
+          if (post.streak !== prevStreak && isStreakMilestone(post.streak)) {
+            modal.show({
+              kind: 'takeover',
+              component: StreakMilestoneTakeover,
+              props: {
+                streak: post.streak,
+                nWordsLearned: post.totalPhrasesLearned,
+                onContinue: () => modal.dismiss(),
+              },
+            });
+            return;
+          }
+
+          if (
+            dailyGoalMinutes &&
+            prevTodayMinutes < dailyGoalMinutes &&
+            post.todayMinutes >= dailyGoalMinutes &&
+            post.lastGoalCelebrationDate !== today
+          ) {
+            markGoalCelebrated();
+            modal.show({
+              kind: 'dialog',
+              component: GoalCompleteDialog,
+              props: {
+                goalMinutes: dailyGoalMinutes,
+                streakDays: post.streak,
+                onOneMore: () => {
+                  modal.dismiss();
+                  router.push('/(tabs)/learn');
+                },
+                onDone: () => modal.dismiss(),
+              },
+            });
+          }
+
+          console.log('[lesson] completed', {
+            lessonId: lesson.id,
+            phrasesLearned: phraseCount,
+          });
+        },
+        onError: (err) => {
+          if (err instanceof LessonNotRegisteredError) {
+            Toast.show({
+              kind: 'error',
+              id: 'lesson.notRegistered',
+              title: 'Lesson not registered on server',
+              subtitle: 'Try again later — tap anywhere to retry',
+            });
+          } else {
+            Toast.show({
+              kind: 'error',
+              id: 'lesson.saveFailed',
+              title: "Couldn't save your progress. Try again.",
+              subtitle: 'Tap "Back to lessons" to retry',
+            });
+          }
+          console.warn('[lesson] save failed', err);
+        },
+      },
+    );
+  };
 
   useEffect(() => {
-    const score = totalDrills > 0 ? Math.round((correctCount / totalDrills) * 100) : 0;
-
-    // Snapshot pre-completion state so we can detect milestone transitions.
-    const prevStreak = useProgressStore.getState().streak;
-    const prevTodayMinutes =
-      useProgressStore.getState().todayMinutesDate ===
-      new Date().toISOString().split('T')[0]
-        ? useProgressStore.getState().todayMinutes
-        : 0;
-
-    completeLesson(lesson.id, score, phraseCount, ESTIMATED_MIN_PER_LESSON);
-    updateStreak();
-    recordActivity();
-
-    const post = useProgressStore.getState();
-    const today = new Date().toISOString().split('T')[0];
-
-    // Streak milestone (takeover) — only fires when the streak number changed
-    // into a configured milestone this completion.
-    if (
-      post.streak !== prevStreak &&
-      isStreakMilestone(post.streak)
-    ) {
-      modal.show({
-        kind: 'takeover',
-        component: StreakMilestoneTakeover,
-        props: {
-          streak: post.streak,
-          nWordsLearned: post.totalPhrasesLearned,
-          onContinue: () => modal.dismiss(),
-        },
-      });
-      return;
-    }
-
-    // Daily-goal celebration (dialog) — fires the first time today crosses goal.
-    if (
-      dailyGoalMinutes &&
-      prevTodayMinutes < dailyGoalMinutes &&
-      post.todayMinutes >= dailyGoalMinutes &&
-      post.lastGoalCelebrationDate !== today
-    ) {
-      markGoalCelebrated();
-      modal.show({
-        kind: 'dialog',
-        component: GoalCompleteDialog,
-        props: {
-          goalMinutes: dailyGoalMinutes,
-          streakDays: post.streak,
-          onOneMore: () => {
-            modal.dismiss();
-            router.push('/(tabs)/learn');
-          },
-          onDone: () => modal.dismiss(),
-        },
-      });
-    }
-
-    console.log('[lesson] completed', { lessonId: lesson.id, phrasesLearned: phraseCount });
+    if (attemptedRef.current) return;
+    attemptedRef.current = true;
+    runSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleBackToLessons = () => {
+    if (mutation.isPending) return;
+    if (mutation.isError) {
+      runSave();
+      return;
+    }
+    onClose();
+  };
 
   const handleMarkIntent = () => {
     if (intentMarked) return;
@@ -248,9 +291,17 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
         </Pressable>
 
         <Pressable
-          onPress={onClose}
+          onPress={handleBackToLessons}
+          disabled={mutation.isPending}
           accessibilityRole="button"
-          accessibilityLabel="Back to lessons"
+          accessibilityLabel={
+            mutation.isPending
+              ? 'Saving progress'
+              : mutation.isError
+                ? 'Retry saving progress'
+                : 'Back to lessons'
+          }
+          accessibilityState={{ disabled: mutation.isPending, busy: mutation.isPending }}
           style={({ pressed }) => ({
             backgroundColor: pressed ? Colors.surfaceContainerHigh : 'transparent',
             borderRadius: Radius.md,
@@ -258,17 +309,25 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
             minHeight: moderateScale(44),
             alignItems: 'center',
             justifyContent: 'center',
+            opacity: mutation.isPending ? 0.6 : 1,
           })}
         >
-          <Text
-            style={{
-              fontFamily: Fonts.dmSans.medium,
-              fontSize: moderateScale(14),
-              color: Colors.tertiary,
-            }}
-          >
-            Back to lessons
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+            {mutation.isPending && <ActivityIndicator size="small" color={Colors.tertiary} />}
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.medium,
+                fontSize: moderateScale(14),
+                color: Colors.tertiary,
+              }}
+            >
+              {mutation.isPending
+                ? 'Saving…'
+                : mutation.isError
+                  ? 'Retry'
+                  : 'Back to lessons'}
+            </Text>
+          </View>
         </Pressable>
       </View>
     </View>

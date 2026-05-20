@@ -1,10 +1,13 @@
 import type { Lesson, LessonId } from './types';
-import { meetingSomeoneNew } from './meeting-someone-new';
+import { greetings } from './greetings';
+import { names } from './names';
 
 export const LESSONS: Record<LessonId, Lesson> = {
-  [meetingSomeoneNew.id]: meetingSomeoneNew,
+  [greetings.id]: greetings,
+  [names.id]: names,
 };
 
 export const LESSON_ORDER: LessonId[] = [
-  meetingSomeoneNew.id,
+  greetings.id,
+  names.id,
 ];

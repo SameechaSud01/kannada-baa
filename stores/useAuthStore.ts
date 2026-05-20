@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../services/api/supabase';
 import { useUserStore } from './useUserStore';
 import { useProgressStore } from './progressStore';
+import { resetLessonsCache } from '../services/api/lessons';
 
 interface AuthState {
   session: Session | null;
@@ -30,6 +31,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     await supabase.auth.signOut();
     useUserStore.getState().reset();
     useProgressStore.getState().reset();
+    resetLessonsCache();
     set({ session: null, user: null });
   },
 }));

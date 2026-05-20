@@ -31,6 +31,12 @@ interface ProgressState {
   recordActivity: () => void;
   markGoalCelebrated: () => void;
   setHydrated: (hydrated: boolean) => void;
+  /**
+   * Merge server-fetched completion slugs into completedLessons as a
+   * deduped union. Does not touch xp, streak, lessonProgress, or any
+   * other field — completion-only by design (spec_progress_persistence).
+   */
+  hydrateFromServerCompletions: (slugs: string[]) => void;
   /** Reset progress state on signOut so a different account starts fresh. */
   reset: () => void;
 }
@@ -108,6 +114,14 @@ export const useProgressStore = create<ProgressState>()(
       markGoalCelebrated: () => set({ lastGoalCelebrationDate: getTodayISO() }),
 
       setHydrated: (isHydrated) => set({ isHydrated }),
+
+      hydrateFromServerCompletions: (slugs) =>
+        set((state) => {
+          const merged = new Set(state.completedLessons);
+          for (const slug of slugs) merged.add(slug);
+          if (merged.size === state.completedLessons.length) return state;
+          return { completedLessons: Array.from(merged) };
+        }),
 
       reset: () =>
         set({

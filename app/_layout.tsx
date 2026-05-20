@@ -17,6 +17,8 @@ import { useUserStore } from '../stores/useUserStore';
 import { useProgressStore } from '../stores/progressStore';
 import { supabase } from '../services/api/supabase';
 import { fetchUserRow } from '../services/api/users';
+import { fetchCompletedLessons, recordLessonCompletion } from '../services/api/progress';
+import { fetchLessonIdBySlug } from '../services/api/lessons';
 import { Audio } from 'expo-av';
 import { isKannadaVoiceAvailable } from '../services/audio/deviceTtsAudioService';
 import { ModalHost, useModal } from '../components/modals/ModalHost';
@@ -27,6 +29,39 @@ import * as Linking from 'expo-linking';
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+/**
+ * Server-first hydration for lesson completions (spec_progress_persistence).
+ * Pulls the server list, backfills any local-only slugs to the server with
+ * score=null, then merges the union into useProgressStore. Routing is not
+ * blocked on this — the store update triggers re-renders once it resolves.
+ */
+async function hydrateCompletions(userId: string) {
+  const serverCompletions = await fetchCompletedLessons(userId);
+  const serverSlugs = serverCompletions.map((c) => c.slug);
+  const serverSet = new Set(serverSlugs);
+
+  const localOnly = useProgressStore
+    .getState()
+    .completedLessons.filter((slug) => !serverSet.has(slug));
+
+  for (const slug of localOnly) {
+    try {
+      const lessonId = await fetchLessonIdBySlug(slug);
+      if (!lessonId) {
+        console.warn('[progress] backfill skipped, no lesson for slug', slug);
+        continue;
+      }
+      await recordLessonCompletion(lessonId, null);
+    } catch (err) {
+      console.warn('[progress] backfill failed for slug', slug, err);
+    }
+  }
+
+  useProgressStore
+    .getState()
+    .hydrateFromServerCompletions([...serverSlugs, ...localOnly]);
+}
 
 /**
  * Boot-time TTS voice probe (MODALS §6.9). Runs inside ModalHost so we can
@@ -90,6 +125,10 @@ function AppGate() {
         .catch((err) => {
           console.warn('[auth] fetchUserRow failed', err);
         });
+
+      hydrateCompletions(userId).catch((err) => {
+        console.warn('[progress] hydrateCompletions failed', err);
+      });
     });
 
     supabase.auth.getSession().catch(async (err) => {

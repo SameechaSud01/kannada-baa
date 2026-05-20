@@ -21,7 +21,7 @@ Owns: curriculum structure, vocabulary schema, audio / asset conventions, **and*
 
 **Format:** scenario-based lessons. Each lesson grounds Kannada in a real Bengaluru situation rather than teaching abstract vocab.
 
-**Volume:** 8-slot curriculum defined in [plannedLessons.ts](../../constants/lessons/plannedLessons.ts). 1 lesson implemented; 7 to write.
+**Volume:** 8-slot curriculum defined in [plannedLessons.ts](../../constants/lessons/plannedLessons.ts). 2 lessons implemented; 6 to write.
 
 ### Lesson slots
 
@@ -29,14 +29,14 @@ Owns: curriculum structure, vocabulary schema, audio / asset conventions, **and*
 
 | Slot | Title | Subtitle | Char | Status |
 |---|---|---|---|---|
-| 1 | Meeting someone new | First introductions | ನ | ✅ Implemented |
-| 2 | Numbers & money | Count and pay | ಒ | TODO |
-| 3 | Food & ordering | Eat without pointing | ಊ | TODO |
-| 4 | Directions | Left, right, here, there | ಎ | TODO |
-| 5 | Shopping | Ask, haggle, decline | ಬ | TODO |
-| 6 | Small talk | Weather, family, work | ಮ | TODO |
-| 7 | Travel & transit | Buses, autos, trains | ರ | TODO |
-| 8 | Everyday courtesies | Thank you, sorry, please | ಸ | TODO |
+| 1 | Greetings | Hello and how are you | ನ | ✅ Implemented |
+| 2 | Names | I, you, my name is | ಹ | ✅ Implemented |
+| 3 | Wanting | I want, I don't want | ಬೇ | TODO |
+| 4 | Pointing | This, that, here, there | ಇ | TODO |
+| 5 | Easy verbs | Come, eat, laugh | ಬ | TODO |
+| 6 | Questions | Who, what, where | ಯಾ | TODO |
+| 7 | Hard verbs | See, do, play | ನೋ | TODO |
+| 8 | Putting it together | Combining what you've learned | ಸ | TODO |
 
 ## Lesson schema
 

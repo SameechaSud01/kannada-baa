@@ -16,14 +16,14 @@ export type PlannedLessonSlot = {
 };
 
 export const PLANNED_LESSON_SLOTS: PlannedLessonSlot[] = [
-  { slot: 1, title: 'Meeting someone new', subtitle: 'First introductions', charPlaceholder: 'ನ' },
-  { slot: 2, title: 'Numbers & money', subtitle: 'Count and pay', charPlaceholder: 'ಒ' },
-  { slot: 3, title: 'Food & ordering', subtitle: 'Eat without pointing', charPlaceholder: 'ಊ' },
-  { slot: 4, title: 'Directions', subtitle: 'Left, right, here, there', charPlaceholder: 'ಎ' },
-  { slot: 5, title: 'Shopping', subtitle: 'Ask, haggle, decline', charPlaceholder: 'ಬ' },
-  { slot: 6, title: 'Small talk', subtitle: 'Weather, family, work', charPlaceholder: 'ಮ' },
-  { slot: 7, title: 'Travel & transit', subtitle: 'Buses, autos, trains', charPlaceholder: 'ರ' },
-  { slot: 8, title: 'Everyday courtesies', subtitle: 'Thank you, sorry, please', charPlaceholder: 'ಸ' },
+  { slot: 1, title: 'Greetings', subtitle: 'Hello and how are you', charPlaceholder: 'ನ' },
+  { slot: 2, title: 'Names', subtitle: 'I, you, my name is', charPlaceholder: 'ಹ' },
+  { slot: 3, title: 'Wanting', subtitle: "I want, I don't want", charPlaceholder: 'ಬೇ' },
+  { slot: 4, title: 'Pointing', subtitle: 'This, that, here, there', charPlaceholder: 'ಇ' },
+  { slot: 5, title: 'Easy verbs', subtitle: 'Come, eat, laugh', charPlaceholder: 'ಬ' },
+  { slot: 6, title: 'Questions', subtitle: 'Who, what, where', charPlaceholder: 'ಯಾ' },
+  { slot: 7, title: 'Hard verbs', subtitle: 'See, do, play', charPlaceholder: 'ನೋ' },
+  { slot: 8, title: 'Putting it together', subtitle: "Combining what you've learned", charPlaceholder: 'ಸ' },
 ];
 
 export const TOTAL_LESSON_SLOTS = PLANNED_LESSON_SLOTS.length;

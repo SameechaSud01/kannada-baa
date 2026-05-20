@@ -38,16 +38,6 @@ Numbering is monotonic and never reused. Gaps in the sequence (C2, C4, C5, C8…
 2. Execute steps 2–4 of the migration in CONTENT.md.
 3. Step 5 (Profile/onboarding UI removal) is already a verified no-op — no tone UI exists.
 
-### C6 — Lesson-completion idempotency contract has zero tests
-
-**What's wrong:** [STATE.md](STATE.md#streak-logic) locks the contract that `completeLesson` is idempotent. The fix landed in commit `c7f3e57` ("fix(progress): make completeLesson idempotent"), which moved the dedup from the caller into the store action and removed a load-bearing `completedAlready` guard in `DoneCard`. There are no tests pinning this contract. A future refactor that removes the early-return — or a regression in `progressStore.ts` — would re-inflate XP / `totalPhrasesLearned` / `totalMinutesPracticed` on every replay without anything failing.
-
-**Why it matters:** The whole streak/XP design depends on this. Silent regression here breaks the "warm and forgiving" metric story.
-
-**Owning spec:** [STATE.md](STATE.md#streak-logic).
-
-**Resolution owed:** Add a unit test against `useProgressStore.completeLesson` that calls it twice with the same `lessonId` and asserts `xp`, `totalPhrasesLearned`, `totalMinutesPracticed`, and `completedLessons.length` do not change on the second call.
-
 ### C7 — `fill_blank` drill type is a placeholder, not an implementation
 
 **What's wrong:** [CONTENT.md](CONTENT.md#authoring-rules-spec-leads-code--content-must-conform) authoring rule says drills "mix `listen_pick` / `translate_pick` / `fill_blank`." The type ([constants/lessons/types.ts](../../constants/lessons/types.ts)) includes `fill_blank`. Routing in [components/lesson/drill/DrillPhase.tsx](../../components/lesson/drill/DrillPhase.tsx) sends `fill_blank` items to [components/lesson/drill/FillBlankPlaceholder.tsx](../../components/lesson/drill/FillBlankPlaceholder.tsx), which renders the literal text "Fill-in-the-blank / Not yet implemented — skipping." and a Skip button that resolves the drill as wrong. **Verified by reading both files directly.**
@@ -73,6 +63,16 @@ Numbering is monotonic and never reused. Gaps in the sequence (C2, C4, C5, C8…
 **Resolution owed:** Edit [README.md](../../README.md) to drop NativeWind from the stack list (line 3) and from the "Styling" section (line 153), replacing with "inline styles + tokens in `constants/`". No CLAUDE.md edit needed beyond the new top-of-file session-start instruction.
 
 ## Resolved
+
+### C6 — Lesson-completion idempotency contract now pinned by tests ✅
+
+**What was wrong:** [STATE.md](STATE.md#streak-logic) locks the contract that `completeLesson` is idempotent, but no tests pinned it. A future refactor that removed the store's early-return would have silently re-inflated `xp` / `totalPhrasesLearned` / `totalMinutesPracticed` on every replay.
+
+**Resolution:** [spec_progress_persistence.md](../../spec_docs/Sameecha/spec_progress_persistence.md) bundled the test fix. [__tests__/stores/progressStore.test.ts](../../__tests__/stores/progressStore.test.ts) calls `useProgressStore.completeLesson` twice with the same slug and asserts `xp`, `totalPhrasesLearned`, `totalMinutesPracticed`, `todayMinutes`, and `completedLessons.length` do not change on the second call (and that a higher score on replay does not award additional XP either).
+
+**Owning spec:** [STATE.md](STATE.md#streak-logic).
+
+**Status:** Closed 2026-05-20.
 
 ### C1 — OppositeGame ported off NativeWind ✅
 
