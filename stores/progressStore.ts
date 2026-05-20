@@ -13,6 +13,11 @@ interface ProgressState {
   totalMinutesPracticed: number;
   // TODO: tracked via recordActivity but not yet surfaced in UI.
   weeklyActivity: Record<string, boolean>;
+  /** Minutes practiced today — keyed by ISO date so it resets at midnight (MODALS §6.7). */
+  todayMinutes: number;
+  todayMinutesDate: string;
+  /** Most recent date GoalCompleteDialog fired, to prevent repeat shows (MODALS §6.7). */
+  lastGoalCelebrationDate: string | null;
   isHydrated: boolean;
 
   updateLessonProgress: (lessonId: string, phraseIndex: number) => void;
@@ -24,6 +29,7 @@ interface ProgressState {
   ) => void;
   updateStreak: () => void;
   recordActivity: () => void;
+  markGoalCelebrated: () => void;
   setHydrated: (hydrated: boolean) => void;
 }
 
@@ -40,6 +46,9 @@ export const useProgressStore = create<ProgressState>()(
       totalPhrasesLearned: 0,
       totalMinutesPracticed: 0,
       weeklyActivity: {},
+      todayMinutes: 0,
+      todayMinutesDate: '',
+      lastGoalCelebrationDate: null,
       isHydrated: false,
 
       updateLessonProgress: (lessonId, phraseIndex) =>
@@ -57,11 +66,15 @@ export const useProgressStore = create<ProgressState>()(
           // call updateStreak() separately to keep streak logic in one place.
           if (state.completedLessons.includes(lessonId)) return state;
           const xpAward = score >= 80 ? 20 : 10;
+          const today = getTodayISO();
+          const carryToday = state.todayMinutesDate === today ? state.todayMinutes : 0;
           return {
             completedLessons: [...state.completedLessons, lessonId],
             xp: state.xp + xpAward,
             totalPhrasesLearned: state.totalPhrasesLearned + phrasesLearned,
             totalMinutesPracticed: state.totalMinutesPracticed + minutesPracticed,
+            todayMinutes: carryToday + minutesPracticed,
+            todayMinutesDate: today,
           };
         }),
 
@@ -89,6 +102,8 @@ export const useProgressStore = create<ProgressState>()(
           },
         }));
       },
+
+      markGoalCelebrated: () => set({ lastGoalCelebrationDate: getTodayISO() }),
 
       setHydrated: (isHydrated) => set({ isHydrated }),
     }),

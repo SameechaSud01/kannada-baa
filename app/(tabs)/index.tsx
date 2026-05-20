@@ -13,6 +13,9 @@ import { LESSONS, LESSON_ORDER } from '../../constants/lessons';
 import { PLANNED_LESSON_SLOTS, TOTAL_LESSON_SLOTS } from '../../constants/lessons/plannedLessons';
 import type { Phrase } from '../../constants/lessons/types';
 import { deviceTtsAudioService } from '../../services/audio/deviceTtsAudioService';
+import { Toasts } from '../../components/modals/instances/toastCatalog';
+import { useModal } from '../../components/modals/ModalHost';
+import { PhraseDetailSheet } from '../../components/modals/instances/PhraseDetailSheet';
 import { formatFirstName } from '../../utils/formatName';
 import { useCompletedLessons, useStreak } from '../../hooks/progress';
 
@@ -45,6 +48,7 @@ export default function HomeScreen() {
   const completedLessons = useCompletedLessons();
   const streak = useStreak();
   const user = useAuthStore((s) => s.user);
+  const modal = useModal();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(4)).current;
@@ -100,7 +104,10 @@ export default function HomeScreen() {
     if (!txt) return;
     deviceTtsAudioService
       .play(txt)
-      .catch((err) => console.warn('[audio] home word-of-day failed', err));
+      .catch((err) => {
+        console.warn('[audio] home word-of-day failed', err);
+        Toasts.audioFailed(handleListenWordOfDay);
+      });
   };
 
   return (
@@ -182,13 +189,26 @@ export default function HomeScreen() {
           </Text>
 
           {/* ── 1. WORD OF THE DAY ── */}
-          <View
-            style={{
+          <Pressable
+            onPress={() =>
+              modal.show({
+                kind: 'sheet',
+                component: PhraseDetailSheet,
+                props: {
+                  phrase: wordOfDay,
+                  onDismiss: () => modal.dismiss(),
+                },
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel={`Word of the day: ${wordOfDay.english}. Tap for breakdown.`}
+            style={({ pressed }) => ({
               backgroundColor: Colors.surfaceContainerLow,
               borderRadius: Radius.xl,
               padding: Spacing.xxl,
               marginBottom: Spacing.lg,
-            }}
+              transform: [{ scale: pressed ? 0.99 : 1 }],
+            })}
           >
             <Text
               style={{
@@ -266,7 +286,7 @@ export default function HomeScreen() {
                 Listen
               </Text>
             </Pressable>
-          </View>
+          </Pressable>
 
           {/* ── 2. YOUR PROGRESS — lessons/8 ring ── */}
           <Pressable

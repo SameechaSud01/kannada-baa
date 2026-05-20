@@ -10,9 +10,11 @@ interface PhraseDisplayProps {
   phrase: Phrase;
   hintRevealed: boolean;
   onRevealHint: () => void;
+  /** Tap the Kannada hero text to open the PhraseDetailSheet (MODALS §6.4). */
+  onPressHero?: () => void;
 }
 
-export function PhraseDisplay({ phrase, hintRevealed, onRevealHint }: PhraseDisplayProps) {
+export function PhraseDisplay({ phrase, hintRevealed, onRevealHint, onPressHero }: PhraseDisplayProps) {
   const imageSource = resolveImage(phrase.imageKey);
 
   return (
@@ -64,20 +66,35 @@ export function PhraseDisplay({ phrase, hintRevealed, onRevealHint }: PhraseDisp
         </View>
       )}
 
-      <Text
-        style={{
-          fontFamily: Fonts.notoSerifKannada.regular,
-          fontSize: moderateScale(34),
-          color: Colors.primaryContainer,
-          textAlign: 'center',
-          lineHeight: moderateScale(54),
-          paddingTop: Spacing.sm,
-          marginBottom: Spacing.md,
-        }}
-        accessibilityLabel={`Kannada: ${phrase.kannada}`}
+      <Pressable
+        onPress={onPressHero}
+        disabled={!onPressHero}
+        accessibilityRole={onPressHero ? 'button' : 'text'}
+        accessibilityLabel={
+          onPressHero
+            ? `Kannada: ${phrase.kannada}. Tap for breakdown.`
+            : `Kannada: ${phrase.kannada}`
+        }
+        hitSlop={6}
+        style={({ pressed }) => ({
+          opacity: pressed && onPressHero ? 0.7 : 1,
+          paddingHorizontal: Spacing.sm,
+        })}
       >
-        {phrase.kannada}
-      </Text>
+        <Text
+          style={{
+            fontFamily: Fonts.notoSerifKannada.regular,
+            fontSize: moderateScale(34),
+            color: Colors.primaryContainer,
+            textAlign: 'center',
+            lineHeight: moderateScale(54),
+            paddingTop: Spacing.sm,
+            marginBottom: Spacing.md,
+          }}
+        >
+          {phrase.kannada}
+        </Text>
+      </Pressable>
 
       <Text
         style={{

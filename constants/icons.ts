@@ -27,6 +27,7 @@ import {
   IconBolt,
   IconBook2,
   IconCar,
+  IconCheck,
   IconChevronRight,
   IconCircleCheck,
   IconCircleX,
@@ -42,6 +43,8 @@ import {
   IconMoodNeutral,
   IconMoodSad,
   IconPhoto,
+  IconPlayerPlayFilled,
+  IconSparkles,
   IconStack2,
   IconTargetArrow,
   IconUrgent,
@@ -92,6 +95,16 @@ export const Icons = {
   ratingEasy: IconMoodHappy,
   ratingOk: IconMoodNeutral,
   ratingHard: IconMoodSad,
+
+  // Modal system (Spec MODALS)
+  x: IconX,
+  play: IconPlayerPlayFilled,
+  bell: IconBell,
+  check: IconCheck,
+  headphones: IconHeadphones,
+  sparkle: IconSparkles,
+  flame: IconFlame,
+  lock: IconLock,
 } as const;
 
 export type IconName = keyof typeof Icons;

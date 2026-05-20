@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale } from 'react-native-size-matters';
@@ -9,6 +10,15 @@ import { Icons } from '../../constants/icons';
 import type { Lesson } from '../../constants/lessons/types';
 import type { DrillAttempt } from '../../hooks/useLessonRunner';
 import { useProgressStore } from '../../stores/progressStore';
+import { useUserStore } from '../../stores/useUserStore';
+import { useModal } from '../../components/modals/ModalHost';
+import { GoalCompleteDialog } from '../../components/modals/instances/GoalCompleteDialog';
+import {
+  StreakMilestoneTakeover,
+  isStreakMilestone,
+} from '../../components/modals/instances/StreakMilestoneTakeover';
+
+const ESTIMATED_MIN_PER_LESSON = 5;
 
 interface DoneCardProps {
   lesson: Lesson;
@@ -18,6 +28,7 @@ interface DoneCardProps {
 
 export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [intentMarked, setIntentMarked] = useState(false);
 
   const correctCount = drillAttempts.filter((a) => a.correct).length;
@@ -27,12 +38,69 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
   const completeLesson = useProgressStore((s) => s.completeLesson);
   const updateStreak = useProgressStore((s) => s.updateStreak);
   const recordActivity = useProgressStore((s) => s.recordActivity);
+  const markGoalCelebrated = useProgressStore((s) => s.markGoalCelebrated);
+  const dailyGoalMinutes = useUserStore((s) => s.dailyGoalMinutes);
+  const modal = useModal();
 
   useEffect(() => {
     const score = totalDrills > 0 ? Math.round((correctCount / totalDrills) * 100) : 0;
-    completeLesson(lesson.id, score, phraseCount, 0);
+
+    // Snapshot pre-completion state so we can detect milestone transitions.
+    const prevStreak = useProgressStore.getState().streak;
+    const prevTodayMinutes =
+      useProgressStore.getState().todayMinutesDate ===
+      new Date().toISOString().split('T')[0]
+        ? useProgressStore.getState().todayMinutes
+        : 0;
+
+    completeLesson(lesson.id, score, phraseCount, ESTIMATED_MIN_PER_LESSON);
     updateStreak();
     recordActivity();
+
+    const post = useProgressStore.getState();
+    const today = new Date().toISOString().split('T')[0];
+
+    // Streak milestone (takeover) — only fires when the streak number changed
+    // into a configured milestone this completion.
+    if (
+      post.streak !== prevStreak &&
+      isStreakMilestone(post.streak)
+    ) {
+      modal.show({
+        kind: 'takeover',
+        component: StreakMilestoneTakeover,
+        props: {
+          streak: post.streak,
+          nWordsLearned: post.totalPhrasesLearned,
+          onContinue: () => modal.dismiss(),
+        },
+      });
+      return;
+    }
+
+    // Daily-goal celebration (dialog) — fires the first time today crosses goal.
+    if (
+      dailyGoalMinutes &&
+      prevTodayMinutes < dailyGoalMinutes &&
+      post.todayMinutes >= dailyGoalMinutes &&
+      post.lastGoalCelebrationDate !== today
+    ) {
+      markGoalCelebrated();
+      modal.show({
+        kind: 'dialog',
+        component: GoalCompleteDialog,
+        props: {
+          goalMinutes: dailyGoalMinutes,
+          streakDays: post.streak,
+          onOneMore: () => {
+            modal.dismiss();
+            router.push('/(tabs)/learn');
+          },
+          onDone: () => modal.dismiss(),
+        },
+      });
+    }
+
     console.log('[lesson] completed', { lessonId: lesson.id, phrasesLearned: phraseCount });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

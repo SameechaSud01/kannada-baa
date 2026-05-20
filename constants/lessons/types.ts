@@ -24,6 +24,10 @@ export type Phrase = {
   audioKey?: AudioKey;      // optional — for v2 recorded-audio swap-in
   imageKey?: ImageKey;      // optional — for intake illustration
   vocabAtoms: string[];     // sub-words flagged as "new" — used for i+1 sequencing
+  /** Optional cultural/grammar note shown in PhraseDetailSheet (MODALS §6.4). */
+  note?: string;
+  /** Optional atom-level glosses surfaced in PhraseDetailSheet (MODALS §6.4). */
+  gloss?: Array<{ atom: string; en: string; transliteration?: string }>;
 };
 
 /**

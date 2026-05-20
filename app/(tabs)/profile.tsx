@@ -12,6 +12,9 @@ import { useUserStore } from '../../stores/useUserStore';
 import { useStreak, useWordsLearned } from '../../hooks/progress';
 import { formatFirstName } from '../../utils/formatName';
 import { supabase } from '../../services/api/supabase';
+import { useModal } from '../../components/modals/ModalHost';
+import { Toasts } from '../../components/modals/instances/toastCatalog';
+import { SignOutDialog } from '../../components/modals/instances/SignOutDialog';
 
 type LearningGoal = 'spoken' | 'fluency';
 
@@ -33,6 +36,28 @@ export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const learningMode = useUserStore((s) => s.learningMode);
   const setLearningMode = useUserStore((s) => s.setLearningMode);
+  const modal = useModal();
+
+  const handleSignOutPress = () => {
+    modal.show({
+      kind: 'dialog',
+      component: SignOutDialog,
+      props: {
+        onConfirm: async () => {
+          modal.dismiss();
+          try {
+            await supabase.auth.signOut();
+            Toasts.signedOut();
+          } catch (err) {
+            console.warn('[auth] signOut failed', err);
+          }
+        },
+        onCancel: () => modal.dismiss(),
+      },
+      blockBackdropDismiss: true,
+      blockHardwareBack: true,
+    });
+  };
 
   const goal: LearningGoal = storeToGoal(learningMode);
 
@@ -378,7 +403,7 @@ export default function ProfileScreen() {
         {/* Sign out */}
         <View style={{ paddingHorizontal: Spacing.xxl }}>
           <Pressable
-            onPress={() => supabase.auth.signOut()}
+            onPress={handleSignOutPress}
             accessibilityRole="button"
             accessibilityLabel="Sign out"
             style={({ pressed }) => ({

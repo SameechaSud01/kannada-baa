@@ -7,8 +7,13 @@ import { Fonts } from '../../../constants/fonts';
 import { Spacing, Radius } from '../../../constants/spacing';
 import { Icons } from '../../../constants/icons';
 import { deviceTtsAudioService } from '../../../services/audio/deviceTtsAudioService';
+import { useModal } from '../../../components/modals/ModalHost';
+import { PermissionDialog } from '../../../components/modals/instances/PermissionDialog';
+import { useUserStore } from '../../../stores/useUserStore';
 import type { Phrase, SelfRating } from '../../../constants/lessons/types';
 import type { Icon as TablerIcon } from '@tabler/icons-react-native';
+
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 type SayState = 'idle' | 'recording' | 'playing-back' | 'rating' | 'done';
 
@@ -26,6 +31,40 @@ const RATING_OPTIONS: { value: SelfRating; Icon: TablerIcon; label: string }[] =
 export function SayItControl({ phrase, onComplete }: SayItControlProps) {
   const [state, setState] = useState<SayState>('idle');
   const playbackSoundRef = useRef<Audio.Sound | null>(null);
+  const modal = useModal();
+  const micDeniedAt = useUserStore((s) => s.permissionDenials.mic);
+  const recordPermissionDenial = useUserStore((s) => s.recordPermissionDenial);
+
+  const ensureMicPermission = async (): Promise<boolean> => {
+    const existing = await Audio.getPermissionsAsync();
+    if (existing.granted) return true;
+    if (existing.canAskAgain === false) return false;
+
+    // Skip the explainer if user said "Not now" within the last week.
+    if (micDeniedAt) {
+      const last = new Date(micDeniedAt).getTime();
+      if (Date.now() - last < ONE_WEEK_MS) return false;
+    }
+
+    return new Promise<boolean>((resolve) => {
+      modal.show({
+        kind: 'dialog',
+        component: PermissionDialog,
+        props: {
+          kind: 'mic',
+          onAllow: () => {
+            modal.dismiss();
+            resolve(true);
+          },
+          onDeny: () => {
+            recordPermissionDenial('mic');
+            modal.dismiss();
+            resolve(false);
+          },
+        },
+      });
+    });
+  };
 
   useEffect(() => {
     setState('idle');
@@ -40,6 +79,8 @@ export function SayItControl({ phrase, onComplete }: SayItControlProps) {
 
   const handleTap = async () => {
     if (state === 'idle') {
+      const allowed = await ensureMicPermission();
+      if (!allowed) return;
       try {
         await deviceTtsAudioService.startRecording();
         setState('recording');

@@ -1,38 +1,49 @@
-import { Alert, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/colors';
 import { Spacing, Radius } from '../../constants/spacing';
 import { Icons } from '../../constants/icons';
+import { useModal } from '../../components/modals/ModalHost';
+import { ExitLessonDialog, type ExitLessonVariant } from '../../components/modals/instances/ExitLessonDialog';
 
 interface ExitBackButtonProps {
-  message?: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  title?: string;
+  /** Skip the confirm dialog entirely (e.g., on screens that aren't mid-flow). */
+  skipConfirm?: boolean;
+  /** Which copy variant to show — defaults to "lesson". */
+  variant?: ExitLessonVariant;
   floating?: boolean;
 }
 
 export function ExitBackButton({
-  message,
-  confirmLabel = 'Exit',
-  cancelLabel = 'Stay',
-  title,
+  skipConfirm,
+  variant = 'lesson',
   floating = true,
 }: ExitBackButtonProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const modal = useModal();
 
   const onPress = () => {
-    if (!message) {
+    if (skipConfirm) {
       router.back();
       return;
     }
-    Alert.alert(title ?? 'Exit?', message, [
-      { text: cancelLabel, style: 'cancel' },
-      { text: confirmLabel, style: 'destructive', onPress: () => router.back() },
-    ]);
+    modal.show({
+      kind: 'dialog',
+      component: ExitLessonDialog,
+      props: {
+        variant,
+        onConfirm: () => {
+          modal.dismiss();
+          router.back();
+        },
+        onCancel: () => modal.dismiss(),
+      },
+      blockBackdropDismiss: true,
+      blockHardwareBack: true,
+    });
   };
 
   const floatingStyle = floating

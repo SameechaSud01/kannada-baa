@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, Alert, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { Spacing, Radius } from '../../constants/spacing';
 import { supabase } from '../../services/api/supabase';
+import { Toasts } from '../../components/modals/instances/toastCatalog';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -18,6 +19,7 @@ export default function LoginScreen() {
       return;
     }
 
+    Keyboard.dismiss();
     setLoading(true);
     try {
       if (isSignUp) {
@@ -29,8 +31,8 @@ export default function LoginScreen() {
         if (error) throw error;
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
-      Alert.alert('Error', message);
+      console.warn('[auth] error', error);
+      Toasts.signInFailed();
     } finally {
       setLoading(false);
     }
