@@ -1,5 +1,5 @@
 import OppositeGame from '@/src/games/opposites';
 
-export default function OppositeGameScreen() {
+export default function OppositesLessonScreen() {
   return <OppositeGame />;
 }
