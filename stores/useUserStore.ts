@@ -1,12 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-
-interface OnboardingData {
-  learningMode: 'spoken' | 'written' | 'both';
-  motivations: string[];
-  dailyGoalMinutes: 5 | 10 | 20;
-}
+import type { UserRow } from '../services/api/users';
 
 interface UserState {
   hasCompletedOnboarding: boolean;
@@ -20,12 +15,15 @@ interface UserState {
   permissionDenials: Partial<Record<'notifications' | 'mic', string>>;
   isHydrated: boolean;
 
-  setOnboarding: (data: OnboardingData) => void;
   setLearningMode: (mode: 'spoken' | 'written' | 'both') => void;
+  setMotivations: (motivations: string[]) => void;
   setMode: (mode: 'rowdy' | 'classic') => void;
   setHasSeenTtsWarning: (seen: boolean) => void;
   recordPermissionDenial: (kind: 'notifications' | 'mic') => void;
   setHydrated: (hydrated: boolean) => void;
+  hydrateFromUserRow: (row: UserRow) => void;
+  /** Reset user-scoped state on signOut. Preserves device-scoped prefs. */
+  reset: () => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -40,15 +38,9 @@ export const useUserStore = create<UserState>()(
       permissionDenials: {},
       isHydrated: false,
 
-      setOnboarding: (data) =>
-        set({
-          hasCompletedOnboarding: true,
-          learningMode: data.learningMode,
-          motivations: data.motivations,
-          dailyGoalMinutes: data.dailyGoalMinutes,
-        }),
-
       setLearningMode: (learningMode) => set({ learningMode }),
+
+      setMotivations: (motivations) => set({ motivations }),
 
       setMode: (mode) => set({ mode }),
 
@@ -63,6 +55,24 @@ export const useUserStore = create<UserState>()(
         })),
 
       setHydrated: (isHydrated) => set({ isHydrated }),
+
+      hydrateFromUserRow: (row) =>
+        set({
+          learningMode: row.learning_mode,
+          motivations: row.motivations ?? [],
+          dailyGoalMinutes: row.daily_goal_minutes,
+          hasCompletedOnboarding: !!row.onboarding_completed_at,
+        }),
+
+      reset: () =>
+        set({
+          hasCompletedOnboarding: false,
+          learningMode: null,
+          motivations: [],
+          dailyGoalMinutes: null,
+          // Preserved: mode, hasSeenTtsWarning, permissionDenials, isHydrated —
+          // device-scoped state survives account switches.
+        }),
     }),
     {
       name: 'user_prefs',

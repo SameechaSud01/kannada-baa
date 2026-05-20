@@ -11,7 +11,6 @@ import { useAuthStore } from '../../stores/useAuthStore';
 import { useUserStore } from '../../stores/useUserStore';
 import { useStreak, useWordsLearned } from '../../hooks/progress';
 import { formatFirstName } from '../../utils/formatName';
-import { supabase } from '../../services/api/supabase';
 import { useModal } from '../../components/modals/ModalHost';
 import { Toasts } from '../../components/modals/instances/toastCatalog';
 import { SignOutDialog } from '../../components/modals/instances/SignOutDialog';
@@ -46,7 +45,7 @@ export default function ProfileScreen() {
         onConfirm: async () => {
           modal.dismiss();
           try {
-            await supabase.auth.signOut();
+            await useAuthStore.getState().signOut();
             Toasts.signedOut();
           } catch (err) {
             console.warn('[auth] signOut failed', err);

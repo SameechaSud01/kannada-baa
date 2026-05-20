@@ -60,6 +60,39 @@ export const Toasts = {
     });
   },
 
+  invalidCredentials() {
+    Toast.show({
+      kind: 'error',
+      id: 'signIn.invalid',
+      title: 'Check your details',
+      subtitle: 'Enter a valid email and a password of 6+ characters',
+    });
+  },
+
+  confirmEmailPending() {
+    Toast.show({
+      kind: 'success',
+      id: 'signUp.confirmPending',
+      title: 'Check your email to confirm your account',
+    });
+  },
+
+  sessionLost() {
+    Toast.show({
+      kind: 'error',
+      id: 'session.lost',
+      title: 'Please sign in again',
+    });
+  },
+
+  onboardingSaveFailed() {
+    Toast.show({
+      kind: 'error',
+      id: 'onboarding.saveFailed',
+      title: "Couldn't save your answers. Try again.",
+    });
+  },
+
   networkOffline() {
     Toast.show({
       kind: 'error',

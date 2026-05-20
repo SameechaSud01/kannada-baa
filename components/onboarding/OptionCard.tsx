@@ -17,9 +17,9 @@ export function OptionCard({ label, subtitle, selected, onPress }: OptionCardPro
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        backgroundColor: selected ? '#FFF5F5' : '#FFFFFF',
+        backgroundColor: selected ? Colors.errorContainerLow : Colors.surfaceContainerLowest,
         borderWidth: moderateScale(2),
-        borderColor: selected ? Colors.primaryContainer : '#E0DDD0',
+        borderColor: selected ? Colors.primaryContainer : Colors.surfaceContainerHighest,
         borderRadius: moderateScale(16),
         padding: moderateScale(18),
         flexDirection: 'row',
@@ -65,7 +65,7 @@ export function OptionCard({ label, subtitle, selected, onPress }: OptionCardPro
           <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
             <Path
               d="M5 12l5 5L20 7"
-              stroke="#FFFFFF"
+              stroke={Colors.onPrimary}
               strokeWidth={3}
               strokeLinecap="round"
               strokeLinejoin="round"

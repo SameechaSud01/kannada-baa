@@ -16,6 +16,7 @@ import { useAuthStore } from '../stores/useAuthStore';
 import { useUserStore } from '../stores/useUserStore';
 import { useProgressStore } from '../stores/progressStore';
 import { supabase } from '../services/api/supabase';
+import { fetchUserRow } from '../services/api/users';
 import { Audio } from 'expo-av';
 import { isKannadaVoiceAvailable } from '../services/audio/deviceTtsAudioService';
 import { ModalHost, useModal } from '../components/modals/ModalHost';
@@ -74,6 +75,21 @@ function AppGate() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
+
+      // DB is the source of truth for onboarding completion. Hydrate the user
+      // store from public.users on every session event so the local
+      // hasCompletedOnboarding flag can't be stale across accounts. Routing
+      // does not block on this — once the row resolves, the store update
+      // triggers a re-run of the routing effect.
+      const userId = session?.user?.id;
+      if (!userId) return;
+      fetchUserRow(userId)
+        .then((row) => {
+          if (row) useUserStore.getState().hydrateFromUserRow(row);
+        })
+        .catch((err) => {
+          console.warn('[auth] fetchUserRow failed', err);
+        });
     });
 
     supabase.auth.getSession().catch(async (err) => {

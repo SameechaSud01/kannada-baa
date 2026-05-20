@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { Spacing, Radius } from '../../constants/spacing';
 import { supabase } from '../../services/api/supabase';
 import { Toasts } from '../../components/modals/instances/toastCatalog';
+
+const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -14,8 +16,10 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleAuth = async () => {
-    if (!email || !password) {
-      Alert.alert('Please fill in all fields');
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!EMAIL_RE.test(normalizedEmail) || password.length < 6) {
+      Toasts.invalidCredentials();
       return;
     }
 
@@ -23,11 +27,21 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({
+          email: normalizedEmail,
+          password,
+        });
         if (error) throw error;
-        Alert.alert('Check your email for a confirmation link!');
+        // Defensive: only fires if someone re-enables email confirmation in Supabase.
+        // Under the current "Confirm email" OFF setting, signUp returns a live session.
+        if (!data.session) {
+          Toasts.confirmEmailPending();
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
         if (error) throw error;
       }
     } catch (error) {

@@ -27,7 +27,7 @@ export default function GoalScreen() {
     <View
       style={{
         flex: 1,
-        backgroundColor: '#FBFBE2',
+        backgroundColor: Colors.surface,
         paddingTop: insets.top + Spacing.xl,
         paddingBottom: insets.bottom + Spacing.xl,
         paddingHorizontal: Spacing.xxl,
@@ -40,8 +40,8 @@ export default function GoalScreen() {
           style={{
             fontFamily: Fonts.dmSans.bold,
             fontSize: moderateScale(11),
-            letterSpacing: 2,
-            color: '#464646',
+            letterSpacing: 2.5,
+            color: Colors.tertiary,
             textTransform: 'uppercase',
             marginBottom: Spacing.sm,
           }}
@@ -51,18 +51,19 @@ export default function GoalScreen() {
         <Text
           style={{
             fontFamily: Fonts.dmSans.bold,
-            fontSize: moderateScale(28),
-            color: '#1B1D0E',
+            fontSize: moderateScale(22),
+            color: Colors.onSurface,
             marginBottom: Spacing.sm,
           }}
         >
-          What do you want{'\n'}to learn?
+          What do you want to learn?
         </Text>
         <Text
           style={{
             fontFamily: Fonts.dmSans.regular,
-            fontSize: moderateScale(15),
-            color: '#464646',
+            fontSize: moderateScale(13),
+            lineHeight: moderateScale(18),
+            color: Colors.tertiary,
             marginBottom: Spacing.xxxl,
           }}
         >
@@ -87,14 +88,14 @@ export default function GoalScreen() {
           onPress={() => router.back()}
           style={({ pressed }) => ({
             flex: 1,
-            backgroundColor: '#E4E4CC',
+            backgroundColor: Colors.surfaceContainerHighest,
             borderRadius: moderateScale(16),
             paddingVertical: moderateScale(18),
             alignItems: 'center',
             transform: [{ scale: pressed ? 0.97 : 1 }],
           })}
         >
-          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: '#1B1D0E' }}>
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: Colors.onSurface }}>
             Back
           </Text>
         </Pressable>
@@ -106,15 +107,15 @@ export default function GoalScreen() {
             }
           }}
           style={({ pressed }) => ({
-            flex: 2,
-            backgroundColor: selected ? (pressed ? '#8D0020' : Colors.primaryContainer) : '#C8C4B0',
+            flex: 1,
+            backgroundColor: selected ? (pressed ? Colors.primary : Colors.primaryContainer) : Colors.surfaceDim,
             borderRadius: moderateScale(16),
             paddingVertical: moderateScale(18),
             alignItems: 'center',
             transform: [{ scale: pressed && selected ? 0.97 : 1 }],
           })}
         >
-          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: '#FFFFFF' }}>
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: Colors.onPrimary }}>
             Continue
           </Text>
         </Pressable>

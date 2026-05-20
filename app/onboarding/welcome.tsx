@@ -17,7 +17,7 @@ export default function WelcomeScreen() {
     <View
       style={{
         flex: 1,
-        backgroundColor: '#FBFBE2',
+        backgroundColor: Colors.surface,
         paddingTop: insets.top + Spacing.xl,
         paddingBottom: insets.bottom + Spacing.xl,
         paddingHorizontal: Spacing.xxl,
@@ -44,7 +44,7 @@ export default function WelcomeScreen() {
           style={{
             fontFamily: Fonts.dmSans.bold,
             fontSize: moderateScale(20),
-            color: '#1B1D0E',
+            color: Colors.onSurface,
             textAlign: 'center',
             marginBottom: Spacing.sm,
           }}
@@ -55,7 +55,7 @@ export default function WelcomeScreen() {
           style={{
             fontFamily: Fonts.dmSans.regular,
             fontSize: moderateScale(16),
-            color: '#464646',
+            color: Colors.tertiary,
             textAlign: 'center',
             lineHeight: moderateScale(24),
             maxWidth: moderateScale(280),
@@ -68,7 +68,7 @@ export default function WelcomeScreen() {
       <Pressable
         onPress={() => router.push('/onboarding/goal')}
         style={({ pressed }) => ({
-          backgroundColor: pressed ? '#8D0020' : Colors.primaryContainer,
+          backgroundColor: pressed ? Colors.primary : Colors.primaryContainer,
           borderRadius: moderateScale(16),
           paddingVertical: moderateScale(18),
           alignItems: 'center',
@@ -84,7 +84,7 @@ export default function WelcomeScreen() {
           style={{
             fontFamily: Fonts.dmSans.bold,
             fontSize: moderateScale(17),
-            color: '#FFFFFF',
+            color: Colors.onPrimary,
           }}
         >
           Get Started

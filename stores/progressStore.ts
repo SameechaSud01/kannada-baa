@@ -31,6 +31,8 @@ interface ProgressState {
   recordActivity: () => void;
   markGoalCelebrated: () => void;
   setHydrated: (hydrated: boolean) => void;
+  /** Reset progress state on signOut so a different account starts fresh. */
+  reset: () => void;
 }
 
 const getTodayISO = () => new Date().toISOString().split('T')[0];
@@ -106,6 +108,21 @@ export const useProgressStore = create<ProgressState>()(
       markGoalCelebrated: () => set({ lastGoalCelebrationDate: getTodayISO() }),
 
       setHydrated: (isHydrated) => set({ isHydrated }),
+
+      reset: () =>
+        set({
+          streak: 0,
+          lastActiveDate: '',
+          completedLessons: [],
+          lessonProgress: {},
+          xp: 0,
+          totalPhrasesLearned: 0,
+          totalMinutesPracticed: 0,
+          weeklyActivity: {},
+          todayMinutes: 0,
+          todayMinutesDate: '',
+          lastGoalCelebrationDate: null,
+        }),
     }),
     {
       name: 'kannada-baa-progress',
