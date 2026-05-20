@@ -31,4 +31,7 @@ export const Colors = {
 
   // ── Outline / Ghost Border (§4) ────────────────────────
   outlineVariant: '#e5bdbb', // use at 15% opacity only — felt, not seen
+
+  // ── Error states (MODALS §5) ───────────────────────────
+  errorContainerLow: '#f3dada', // pale Mysore red — error-state card bg, toast icon bg
 };

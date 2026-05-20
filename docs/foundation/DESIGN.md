@@ -65,6 +65,11 @@ Spec-leads-code: the tables here are the source of truth. Component code reads f
 |---|---|---|
 | `outlineVariant` | `#e5bdbb` | Subtle felt-shadow lines. **Use at 15 % opacity only.** |
 
+### Error
+| Token | Hex | Use |
+|---|---|---|
+| `errorContainerLow` | `#f3dada` | Pale Mysore red — error-state card bg, toast icon bg. Added for the modal/overlay system; see [MODALS](../../spec_docs/Sameecha/MODALS.md). |
+
 **Why these tones, not Tailwind defaults:** the palette is a deliberate Karnataka identity statement (state flag colors + Mysore red + sandstone). Material 3 tonal logic expresses elevation without strokes (see No-Line rule).
 
 ## Spacing
@@ -150,16 +155,18 @@ See [icons.ts](../../constants/icons.ts) for the full map. Categories: tab bar, 
 
 ## Shadow / elevation
 
-`[OPEN]`
+`[OPEN]` — a global elevation scale is still unspecced. Modal-scoped shadows shipped in [constants/shadows.ts](../../constants/shadows.ts) per the [MODALS](../../spec_docs/Sameecha/MODALS.md) spec.
 
-> **TODO:** No shadow tokens exist yet. Shadow values are inlined per component (e.g. `shadowOpacity: 0.6, shadowRadius: 6`). Proposal:
->
-> | Token | Shadow config |
-> |---|---|
-> | `e0` | None |
-> | `e1` | `{ color: outlineVariant, opacity: 0.15, radius: 4, offset: { 0, 1 } }` |
-> | `e2` | `{ color: outlineVariant, opacity: 0.6, radius: 6, offset: { 0, 2 } }` |
-> | `e3` | Hero lift — TBD |
+### Shipped (modal scope) — `[PROPOSED]` per MODALS §5
+
+| Token | Use |
+|---|---|
+| `Shadows.modal` | Dialog & sheet drop shadow. `{ color #000, opacity 0.22, radius 60, offset (0, 24) }` |
+| `Shadows.toastDark` | Success-top toast. `{ color #000, opacity 0.30, radius 30, offset (0, 10) }` |
+| `Shadows.toastSoft` | Error-bottom toast. `{ color #000, opacity 0.18, radius 30, offset (0, 10) }` |
+| `Shadows.medallion` | Streak takeover medallion. `{ color secondary, opacity 0.20, radius 22, offset (0, 16) }` |
+
+> **TODO (still open):** Global `e0`–`e3` elevation scale for non-modal surfaces. Shadow values are still inlined elsewhere (e.g. `shadowOpacity: 0.6, shadowRadius: 6`).
 
 ## Components
 
@@ -223,6 +230,10 @@ Anatomy + props + tokens used. Every reusable component lives here.
 > **TODO:** spec each game UI as it gets wired.
 > - `DictationGame` ([src/games/dictation/](../../src/games/dictation/))
 > - `OppositeGame` ([src/games/opposites/](../../src/games/opposites/))
+
+### Modals & overlays
+
+`[PROPOSED]` — full spec lives in [spec_docs/Sameecha/MODALS.md](../../spec_docs/Sameecha/MODALS.md). Owns the four overlay shapes (centered dialog, bottom sheet, full-screen takeover, toast), the `ModalHost` + `ToastHost` providers, and 9 modal instances. Implementation in [components/modals/](../../components/modals/). Pending promotion to `[LOCKED]` after sign-off.
 
 ## Open questions / drift
 

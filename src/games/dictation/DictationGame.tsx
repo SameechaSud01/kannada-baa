@@ -41,7 +41,7 @@ export default function DictationGame() {
   if (phase === 'result') {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }}>
-        <ExitBackButton />
+        <ExitBackButton skipConfirm />
         <ResultScreen
           sessionAvg={sessionAvg}
           answeredCount={answeredCount}
@@ -60,10 +60,7 @@ export default function DictationGame() {
 
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.md }}>
-          <ExitBackButton
-            floating={false}
-            message="Exit this game? You'll lose your progress."
-          />
+          <ExitBackButton floating={false} variant="game" />
           <Text style={{ fontFamily: Fonts.dmSans.regular, fontSize: 14, color: Colors.tertiary }}>
             Word{' '}
             <Text style={{ fontFamily: Fonts.dmSans.bold, color: Colors.onSurface }}>

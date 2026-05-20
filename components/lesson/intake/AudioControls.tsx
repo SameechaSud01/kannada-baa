@@ -5,6 +5,7 @@ import { Fonts } from '../../../constants/fonts';
 import { Spacing, Radius } from '../../../constants/spacing';
 import { Icons } from '../../../constants/icons';
 import { deviceTtsAudioService } from '../../../services/audio/deviceTtsAudioService';
+import { Toasts } from '../../../components/modals/instances/toastCatalog';
 import type { Phrase } from '../../../constants/lessons/types';
 
 interface AudioControlsProps {
@@ -19,6 +20,7 @@ export function AudioControls({ phrase }: AudioControlsProps) {
   const handleHearAgain = () => {
     deviceTtsAudioService.play(speakablePhrase(phrase)).catch((err) => {
       console.warn('[audio] play failed', err);
+      Toasts.audioFailed(handleHearAgain);
     });
   };
 

@@ -32,7 +32,7 @@ const OppositeGame: React.FC = () => {
   if (phase === 'result') {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }}>
-        <ExitBackButton />
+        <ExitBackButton skipConfirm />
         <ResultScreen score={score} total={totalQuestions} onReplay={restart} />
       </SafeAreaView>
     );
@@ -55,10 +55,7 @@ const OppositeGame: React.FC = () => {
             gap: Spacing.md,
           }}
         >
-          <ExitBackButton
-            floating={false}
-            message="Exit this game? You'll lose your progress."
-          />
+          <ExitBackButton floating={false} variant="game" />
           <Text
             style={{
               fontSize: moderateScale(14),

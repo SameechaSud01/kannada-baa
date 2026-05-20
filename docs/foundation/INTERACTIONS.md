@@ -115,13 +115,13 @@ Every screen renders four possible states. The defaults below are the contract.
 
 ### Error
 
-`[LOCKED]` — current pattern. Toast/snackbar `[OPEN]`.
+`[LOCKED]` — current pattern. Toast/snackbar pattern `[PROPOSED]` per [MODALS](../../spec_docs/Sameecha/MODALS.md) §4.4 + §6.10 — shipped, pending promotion to `[LOCKED]`.
 
-- **Default:** `Alert.alert()` for hard errors (auth failure, network).
-- **Console-only:** audio playback failures (`console.warn('[audio] ...')`).
-- **No toast / snackbar pattern yet.**
+- **Toasts (shipped):** non-blocking error feedback via the `Toast` system. Catalog: [components/modals/instances/toastCatalog.ts](../../components/modals/instances/toastCatalog.ts). Wired today on login wrong-password (`Toasts.signInFailed`) and audio playback failure (`Toasts.audioFailed`). Bottom-anchored, sticky, lifts above keyboard.
+- **Alert.alert fallbacks (legacy):** still used for missing-field validation on login + sign-up confirmation prompt. Migrate to toast over time.
+- **Console-only:** background TTS auto-play failures in intake (intentional — not user-initiated).
 
-> **TODO:** Decide on a non-blocking error pattern (toast / inline) so audio glitches don't silently swallow.
+> **TODO:** Replace remaining `Alert.alert` call sites with the toast system. Add `Toasts.networkOffline()` wiring when Supabase calls go online (not active today).
 
 ### Empty
 
@@ -138,6 +138,8 @@ Every screen renders four possible states. The defaults below are the contract.
 `[OPEN]`
 
 > **TODO:** No standardised success state today. `DoneCard` is the current lesson-complete moment but isn't reused.
+
+**Shipped (modal scope):** success toasts via the catalog (`Toasts.signedOut`, `Toasts.reminderSet`, `Toasts.lessonSavedOffline`, `Toasts.modeUpdated`). Top-anchored pill, 3s auto-dismiss. See [MODALS](../../spec_docs/Sameecha/MODALS.md) §4.4.
 
 ## Named moments
 
@@ -167,17 +169,29 @@ Catalogued moments — each has its full animation + audio + haptic + copy spec.
 
 > **TODO:** Spec — currently no special treatment beyond advancing. Should there be a small celebration?
 
-### M4: Streak milestone (1, 3, 7, 30, 100 days)
+### M4: Streak milestone (3, 7, 12, 30, 60, 100, 365 days)
 
-`[OPEN]`
+`[PROPOSED]` — implemented per [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.6. Pending promotion to `[LOCKED]`.
 
-> **TODO:** Not implemented. Spec when added.
+- **Visual:** `StreakMilestoneTakeover` — full-screen slide-up (350ms), 220pt radial-gradient medallion with the streak number, per-milestone Lora-italic body copy, static confetti.
+- **Trigger:** `useProgressStore.streak` crosses into a milestone value during `completeLesson` + `updateStreak`. Detected in [components/lesson/DoneCard.tsx](../../components/lesson/DoneCard.tsx) by snapshotting `streak` before/after.
+- **Milestones:** `3, 7, 12, 30, 60, 100, 365`. (Note: spec narrowed from the earlier `1, 3, 7, 30, 100` proposal.)
+- **Audio / haptic:** none yet.
+- **Copy:** per-milestone in `StreakMilestoneTakeover` source. **TODO:** migrate to `constants/copy.ts` as `streakMilestone.{n}` per MODALS spec.
 
 ### M5: First lesson unlock
 
 `[OPEN]`
 
 > **TODO:** Not implemented. Spec when added.
+
+### M7: Daily-goal complete
+
+`[PROPOSED]` — implemented per [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.7. Pending promotion to `[LOCKED]`.
+
+- **Visual:** `GoalCompleteDialog` — centered dialog with 96pt SVG progress ring, "Today's {N} minutes" eyebrow, streak-strip chip, "I'm done" / "One more" actions.
+- **Trigger:** first time per calendar day that `useProgressStore.todayMinutes` crosses `useUserStore.dailyGoalMinutes`. Detected in [components/lesson/DoneCard.tsx](../../components/lesson/DoneCard.tsx). Idempotent via `lastGoalCelebrationDate`.
+- **Suppressed when** a streak milestone fires the same lesson — milestone wins.
 
 ### M6: Mode change (rowdy ↔ classic)
 

@@ -68,7 +68,7 @@ export default function LessonScreen() {
   return (
     <View style={{ flex: 1 }}>
       {phaseEl}
-      <ExitBackButton message="Exit this lesson? You'll lose your progress." />
+      <ExitBackButton />
     </View>
   );
 }

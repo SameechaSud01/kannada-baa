@@ -8,6 +8,8 @@ import { AudioControls, speakablePhrase } from './intake/AudioControls';
 import { SayItControl } from './intake/SayItControl';
 import { IntakeFooter } from './intake/IntakeFooter';
 import { deviceTtsAudioService } from '../../services/audio/deviceTtsAudioService';
+import { useModal } from '../../components/modals/ModalHost';
+import { PhraseDetailSheet } from '../../components/modals/instances/PhraseDetailSheet';
 import type { Lesson, SelfRating } from '../../constants/lessons/types';
 
 interface IntakePhaseProps {
@@ -24,6 +26,7 @@ export function IntakePhase({ lesson, phraseIndex, onAdvance }: IntakePhaseProps
   const [hintsRevealedInSession, setHintsRevealedInSession] = useState(false);
   const [rating, setRating] = useState<SelfRating | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const modal = useModal();
 
   useEffect(() => {
     if (!phrase) return;
@@ -74,6 +77,16 @@ export function IntakePhase({ lesson, phraseIndex, onAdvance }: IntakePhaseProps
             phrase={phrase}
             hintRevealed={hintsRevealedInSession}
             onRevealHint={() => setHintsRevealedInSession(true)}
+            onPressHero={() =>
+              modal.show({
+                kind: 'sheet',
+                component: PhraseDetailSheet,
+                props: {
+                  phrase,
+                  onDismiss: () => modal.dismiss(),
+                },
+              })
+            }
           />
 
           <AudioControls phrase={phrase} />

@@ -13,6 +13,8 @@ import {
   PLANNED_LESSON_SLOTS,
   TOTAL_LESSON_SLOTS,
 } from '../../constants/lessons/plannedLessons';
+import { useModal } from '../../components/modals/ModalHost';
+import { LessonLockedDialog } from '../../components/modals/instances/LessonLockedDialog';
 
 const ESTIMATED_MIN_PER_LESSON = 5;
 
@@ -34,6 +36,7 @@ export default function LearnScreen() {
   const insets = useSafeAreaInsets();
   const completedLessons = useCompletedLessons();
   const streak = useStreak();
+  const modal = useModal();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(4)).current;
@@ -75,7 +78,27 @@ export default function LearnScreen() {
   });
 
   const handleRowPress = (row: LessonRow) => {
-    if (row.state === 'locked') return;
+    if (row.state === 'locked') {
+      const prevSlot = row.slot - 1;
+      const prevRealId = LESSON_ORDER[prevSlot - 1];
+      modal.show({
+        kind: 'dialog',
+        component: LessonLockedDialog,
+        props: {
+          lessonNumber: row.slot,
+          lessonTitle: row.title,
+          prevLessonNumber: prevSlot,
+          prevLessonTitle: row.prevTitle ?? `Lesson ${prevSlot}`,
+          onGoToPrev: () => {
+            modal.dismiss();
+            if (prevRealId) router.push(`/lesson/${prevRealId}`);
+          },
+          onDismiss: () => modal.dismiss(),
+        },
+        dim: 0.4,
+      });
+      return;
+    }
     if (row.realLessonId) {
       router.push(`/lesson/${row.realLessonId}`);
     }
@@ -198,8 +221,7 @@ function LessonRowView({ row, onPress }: { row: LessonRow; onPress: () => void }
   return (
     <Pressable
       onPress={onPress}
-      disabled={isLocked}
-      accessibilityRole={isLocked ? 'text' : 'button'}
+      accessibilityRole="button"
       accessibilityLabel={
         isLocked
           ? `Locked. Complete ${row.prevTitle ?? 'the previous lesson'} to unlock.`

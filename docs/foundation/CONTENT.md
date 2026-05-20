@@ -73,7 +73,7 @@ type Lesson = {
 
 ## Phrase schema
 
-`[LOCKED]` — matches [lessons/types.ts](../../constants/lessons/types.ts).
+`[LOCKED]` — matches [lessons/types.ts](../../constants/lessons/types.ts). Optional `note` / `gloss` fields are `[PROPOSED]` per [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.4.
 
 ```ts
 type Phrase = {
@@ -84,6 +84,12 @@ type Phrase = {
   audioKey?: AudioKey;       // future: recorded audio file ref
   imageKey?: ImageKey;       // future: illustration ref
   vocabAtoms: string[];      // sub-words flagged "new"
+  note?: string;             // [PROPOSED] cultural/grammar callout in PhraseDetailSheet
+  gloss?: Array<{            // [PROPOSED] atom-level glosses in PhraseDetailSheet
+    atom: string;
+    en: string;
+    transliteration?: string;
+  }>;
 };
 ```
 

@@ -11,16 +11,56 @@ import {
 } from '@expo-google-fonts/noto-serif-kannada';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useUserStore } from '../stores/useUserStore';
 import { useProgressStore } from '../stores/progressStore';
 import { supabase } from '../services/api/supabase';
 import { Audio } from 'expo-av';
 import { isKannadaVoiceAvailable } from '../services/audio/deviceTtsAudioService';
+import { ModalHost, useModal } from '../components/modals/ModalHost';
+import { ToastHost } from '../components/modals/ToastHost';
+import { TTSUnavailableDialog } from '../components/modals/instances/TTSUnavailableDialog';
+import * as Linking from 'expo-linking';
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+/**
+ * Boot-time TTS voice probe (MODALS §6.9). Runs inside ModalHost so we can
+ * show the warning dialog if the device has no kn-IN voice.
+ */
+function TtsProbe() {
+  const modal = useModal();
+  const hasSeen = useUserStore((s) => s.hasSeenTtsWarning);
+  const userHydrated = useUserStore((s) => s.isHydrated);
+  const setHasSeen = useUserStore((s) => s.setHasSeenTtsWarning);
+
+  useEffect(() => {
+    if (!userHydrated || hasSeen) return;
+    isKannadaVoiceAvailable().then((available) => {
+      if (available) return;
+      modal.show({
+        kind: 'dialog',
+        component: TTSUnavailableDialog,
+        props: {
+          onOpenSettings: () => {
+            setHasSeen(true);
+            modal.dismiss();
+            Linking.openSettings().catch(() => undefined);
+          },
+          onDismiss: () => {
+            setHasSeen(true);
+            modal.dismiss();
+          },
+        },
+      });
+    });
+  }, [userHydrated, hasSeen, modal, setHasSeen]);
+
+  return null;
+}
 
 function AppGate() {
   const router = useRouter();
@@ -110,10 +150,17 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AppGate />
-      </QueryClientProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <ToastHost>
+            <ModalHost>
+              <TtsProbe />
+              <AppGate />
+            </ModalHost>
+          </ToastHost>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

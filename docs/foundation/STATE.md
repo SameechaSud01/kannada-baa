@@ -42,9 +42,11 @@ Actions: `setSession(session)`, `setLoading(loading)`.
 | `motivations` | `string[]` | From onboarding step 2 (max 3). |
 | `dailyGoalMinutes` | `5 \| 10 \| 20 \| null` | From onboarding step 3. |
 | `mode` | `'rowdy' \| 'classic'` | `[LOCKED: SCHEDULED FOR REMOVAL]` — see [CONTENT.md](CONTENT.md#voice-system) and [CONTRADICTIONS.md](CONTRADICTIONS.md) C3. UI voice tone; drives `useCopy()` resolution today. |
+| `hasSeenTtsWarning` | `boolean` | One-time per install flag for the TTS-unavailable dialog. Added for [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.9. |
+| `permissionDenials` | `Partial<Record<'notifications' \| 'mic', string>>` | ISO timestamp of last "Not now" tap, per permission kind. Used to throttle re-asks (≤ once/week). Added for [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.8. |
 | `isHydrated` | `boolean` | Set true by `onRehydrateStorage`. |
 
-Actions: `setOnboarding(data)`, `setLearningMode(mode)`, `setMode(mode)`, `setHydrated(hydrated)`. **`setMode` is also scheduled for removal alongside the field.**
+Actions: `setOnboarding(data)`, `setLearningMode(mode)`, `setMode(mode)`, `setHasSeenTtsWarning(seen)`, `recordPermissionDenial(kind)`, `setHydrated(hydrated)`. **`setMode` is also scheduled for removal alongside the field.**
 
 > **Note:** Profile screen collapses `learningMode`: `'written'` / `'both'` → `'fluency'`; `'spoken'` → `'spoken'`. This collapse should be a derived selector, not duplicated UI logic. **TODO:** refactor into `useFluencyMode()`.
 
@@ -62,9 +64,14 @@ Actions: `setOnboarding(data)`, `setLearningMode(mode)`, `setMode(mode)`, `setHy
 | `totalPhrasesLearned` | `number` | Cumulative across lessons. |
 | `totalMinutesPracticed` | `number` | Tracked but **not surfaced in UI** (TODO). |
 | `weeklyActivity` | `Record<string, boolean>` | ISO date → true; for week view (not yet surfaced). |
+| `todayMinutes` | `number` | Minutes practiced today, used to detect daily-goal crossing for the celebration dialog. Reset implicitly when `todayMinutesDate` rolls over. Added for [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.7. |
+| `todayMinutesDate` | `string` | ISO `YYYY-MM-DD` for which `todayMinutes` was last accumulated. |
+| `lastGoalCelebrationDate` | `string \| null` | ISO date the `GoalCompleteDialog` last fired. Prevents re-firing the same day. Added for [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.7. |
 | `isHydrated` | `boolean` | Set true by `onRehydrateStorage`. |
 
-Actions: `updateLessonProgress(lessonId, phraseIndex)`, `completeLesson(lessonId, score, phrasesLearned, minutesPracticed)`, `updateStreak()`, `recordActivity()`, `setHydrated(hydrated)`.
+Actions: `updateLessonProgress(lessonId, phraseIndex)`, `completeLesson(lessonId, score, phrasesLearned, minutesPracticed)`, `updateStreak()`, `recordActivity()`, `markGoalCelebrated()`, `setHydrated(hydrated)`.
+
+> **Note (MODALS §6.7):** `completeLesson` now also increments `todayMinutes` by `minutesPracticed` (with date-rollover). `DoneCard` calls it with an `ESTIMATED_MIN_PER_LESSON = 5` placeholder until per-lesson timing is wired.
 
 #### Streak logic
 

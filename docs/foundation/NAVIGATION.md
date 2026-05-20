@@ -86,10 +86,10 @@ Hydration: both `useUserStore.isHydrated` AND `useProgressStore.isHydrated` must
 
 ## Modal vs push
 
-`[OPEN]`
+`[OPEN]` — for route-level modal presentation. Overlay modals **have shipped** via the [MODALS](../../spec_docs/Sameecha/MODALS.md) spec (dialogs, bottom sheets, full-screen takeovers, toasts) and live outside the route stack via `ModalHost` + `ToastHost`. They're orthogonal to the question below.
 
-> **TODO:** No modals currently. Confirm: all navigation is push-stack?
-> Candidate modals:
+> **TODO:** No *route-level* modal presentation currently. Confirm: all navigation is push-stack?
+> Candidate route-level modals:
 > - `/emergency` — it's a "tool" screen, not a page; modal might fit.
 > - Lesson runner — full-screen takeover with no tab bar; modal presentation feels right.
 
@@ -107,9 +107,9 @@ Per-flow rules:
 | `(auth)/login` | none | first screen of its flow |
 | `/onboarding/welcome` | none | first onboarding step; no meaningful prior route |
 | `/onboarding/{goal,motivation,commitment}` | inline Back/Continue pair (existing) | `router.back()` — no confirm; selections are not yet committed to the store |
-| `/lesson/[id]` scenario / intake / drill / output | floating chip overlay | Confirm dialog: "Exit? You'll lose your progress." → `router.back()` |
+| `/lesson/[id]` scenario / intake / drill / output | floating chip overlay | `ExitLessonDialog` (lesson variant) — destructive confirm, blocks backdrop tap + Android hardware back. See [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.1. |
 | `/lesson/[id]` done | none | Existing close button on `DoneCard` handles exit |
-| `/(games)/dictation`, `/(games)/opposites` mid-game | inline chip in header row | Confirm dialog: "Exit this game? You'll lose your progress." → `router.back()` |
+| `/(games)/dictation`, `/(games)/opposites` mid-game | inline chip in header row | `ExitLessonDialog` (game variant). See [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.1. |
 | `/(games)/*` result screen | floating chip overlay | Plain `router.back()` — nothing to lose |
 | `/practice/[id]`, `/heritage/[id]`, `/emergency` | screen-owned back arrow (existing) | Plain `router.back()` |
 
