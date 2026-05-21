@@ -34,7 +34,9 @@ import {
   IconFlame,
   IconHeadphones,
   IconHelpCircle,
+  IconClock,
   IconHome,
+  IconInfoCircle,
   IconLock,
   IconMessage2,
   IconMessages,
@@ -86,6 +88,10 @@ export const Icons = {
   setReminders: IconBell,
   setAudio: IconVolume,
   setHelp: IconHelpCircle,
+
+  // Onboarding
+  info: IconInfoCircle,
+  clock: IconClock,
 
   // Lesson runner — drill / output / intake (replaces former emoji glyphs)
   correct: IconCircleCheck,

@@ -37,7 +37,10 @@ interface ProgressState {
    * other field — completion-only by design (spec_progress_persistence).
    */
   hydrateFromServerCompletions: (slugs: string[]) => void;
-  /** Reset progress state on signOut so a different account starts fresh. */
+  /**
+   * Wipe all progress. Called on signOut and when the signed-in Supabase
+   * user changes, so a different account doesn't inherit another user's progress.
+   */
   reset: () => void;
 }
 

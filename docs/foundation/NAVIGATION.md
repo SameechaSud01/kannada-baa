@@ -46,9 +46,10 @@ Loads fonts, sets audio mode (`playsInSilentModeIOS: true`), probes Kannada TTS 
 | `/(games)/dictation` | [dictation.tsx](../../app/%28games%29/dictation.tsx) | Stack, `headerShown: false` | none | Dictation game |
 | `/(games)/opposites` | [opposites.tsx](../../app/%28games%29/opposites.tsx) | ↑ | none | Opposites game |
 | `/onboarding/welcome` | [welcome.tsx](../../app/onboarding/welcome.tsx) | Stack, `slide_from_right`, `headerShown: false` | none | Intro |
-| `/onboarding/goal` | [goal.tsx](../../app/onboarding/goal.tsx) | ↑ | none | Learning mode (step 1/3) |
-| `/onboarding/motivation` | [motivation.tsx](../../app/onboarding/motivation.tsx) | ↑ | none | Motivation (step 2/3, max 3) |
-| `/onboarding/commitment` | [commitment.tsx](../../app/onboarding/commitment.tsx) | ↑ | none | Daily goal (step 3/3) |
+| `/onboarding/name` | [name.tsx](../../app/onboarding/name.tsx) | ↑ | none | Display name (step 1/4). See [spec_onboarding_tweaks](../../spec_docs/Sameecha/spec_onboarding_tweaks.md). |
+| `/onboarding/goal` | [goal.tsx](../../app/onboarding/goal.tsx) | ↑ | none | Learning mode (step 2/4) |
+| `/onboarding/motivation` | [motivation.tsx](../../app/onboarding/motivation.tsx) | ↑ | none | Motivation (step 3/4, max 3, supports "Other") |
+| `/onboarding/commitment` | [commitment.tsx](../../app/onboarding/commitment.tsx) | ↑ | none | Daily goal (step 4/4, info dialog per choice) |
 | `/lesson/[id]` | [[id].tsx](../../app/lesson/%5Bid%5D.tsx) | root stack | TODO | Lesson runner. Param: `id` = `LessonId` |
 | `/practice/[id]` | [[id].tsx](../../app/practice/%5Bid%5D.tsx) | root stack | TODO | Game detail. Param: `id` = game id |
 | `/heritage/[id]` | [[id].tsx](../../app/heritage/%5Bid%5D.tsx) | root stack | TODO | Heritage detail. Param: `id` = slug |
@@ -74,6 +75,8 @@ Decision matrix:
 Hydration: both `useUserStore.isHydrated` AND `useProgressStore.isHydrated` must be true before `AppGate` redirects. Otherwise stale persisted state may cause flicker.
 
 **Why hydrate first:** the persisted onboarding flag controls the redirect target. Without waiting for hydration, an onboarded user briefly sees `/(auth)/login`.
+
+User-switch reset: AppGate compares `session.user.id` against `useUserStore.userId`. First-time bind (stored id `null`) just records the new id. A mismatch fires `useUserStore.resetForUser(newId)` + `useProgressStore.reset()` and the routing effect waits one tick for the reset to land before re-evaluating. Without this, a previously onboarded user signing out and a new user signing up on the same install inherits the prior `hasCompletedOnboarding: true` flag and skips onboarding.
 
 ## Deep linking
 
@@ -106,7 +109,7 @@ Per-flow rules:
 | `(tabs)` (home, learn, practice, profile) | none | n/a — root tabs |
 | `(auth)/login` | none | first screen of its flow |
 | `/onboarding/welcome` | none | first onboarding step; no meaningful prior route |
-| `/onboarding/{goal,motivation,commitment}` | inline Back/Continue pair (existing) | `router.back()` — no confirm; selections are not yet committed to the store |
+| `/onboarding/{name,goal,motivation,commitment}` | inline Back/Continue pair (existing) | `router.back()` — no confirm; selections are not yet committed to the store |
 | `/lesson/[id]` scenario / intake / drill / output | floating chip overlay | `ExitLessonDialog` (lesson variant) — destructive confirm, blocks backdrop tap + Android hardware back. See [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.1. |
 | `/lesson/[id]` done | none | Existing close button on `DoneCard` handles exit |
 | `/(games)/dictation`, `/(games)/opposites` mid-game | inline chip in header row | `ExitLessonDialog` (game variant). See [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.1. |
@@ -127,7 +130,7 @@ Named multi-screen flows. Each names entry → exit.
 2. User taps "Create account" toggle → fills email/password → submits
 3. Supabase confirms (no email-verification flow in MVP — TODO confirm)
 4. `setSession()` fires → `AppGate` reruns → not onboarded → `/onboarding/welcome`
-5. Welcome → Goal → Motivation → Commitment → `setOnboarding()` → `/(tabs)`
+5. Welcome → Name → Goal → Motivation → Commitment → `setOnboarding()` → `/(tabs)`
 
 ### J2: Complete a lesson
 
