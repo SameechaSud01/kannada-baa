@@ -27,13 +27,13 @@ export default function GoalScreen() {
     <View
       style={{
         flex: 1,
-        backgroundColor: '#FBFBE2',
+        backgroundColor: Colors.surface,
         paddingTop: insets.top + Spacing.xl,
         paddingBottom: insets.bottom + Spacing.xl,
         paddingHorizontal: Spacing.xxl,
       }}
     >
-      <ProgressDots total={4} current={1} />
+      <ProgressDots total={5} current={2} />
 
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Text
@@ -41,20 +41,22 @@ export default function GoalScreen() {
             fontFamily: Fonts.dmSans.bold,
             fontSize: moderateScale(11),
             letterSpacing: 2,
-            color: '#464646',
+            color: Colors.tertiary,
             textTransform: 'uppercase',
             marginBottom: Spacing.sm,
           }}
+          maxFontSizeMultiplier={1.4}
         >
-          Step 1 of 3
+          Step 2 of 4
         </Text>
         <Text
           style={{
             fontFamily: Fonts.dmSans.bold,
             fontSize: moderateScale(28),
-            color: '#1B1D0E',
+            color: Colors.onSurface,
             marginBottom: Spacing.sm,
           }}
+          maxFontSizeMultiplier={1.3}
         >
           What do you want{'\n'}to learn?
         </Text>
@@ -62,9 +64,10 @@ export default function GoalScreen() {
           style={{
             fontFamily: Fonts.dmSans.regular,
             fontSize: moderateScale(15),
-            color: '#464646',
+            color: Colors.tertiary,
             marginBottom: Spacing.xxxl,
           }}
+          maxFontSizeMultiplier={1.4}
         >
           Choose your learning focus
         </Text>
@@ -87,14 +90,14 @@ export default function GoalScreen() {
           onPress={() => router.back()}
           style={({ pressed }) => ({
             flex: 1,
-            backgroundColor: '#E4E4CC',
+            backgroundColor: Colors.surfaceContainerHighest,
             borderRadius: moderateScale(16),
             paddingVertical: moderateScale(18),
             alignItems: 'center',
             transform: [{ scale: pressed ? 0.97 : 1 }],
           })}
         >
-          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: '#1B1D0E' }}>
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: Colors.onSurface }}>
             Back
           </Text>
         </Pressable>
@@ -107,14 +110,14 @@ export default function GoalScreen() {
           }}
           style={({ pressed }) => ({
             flex: 2,
-            backgroundColor: selected ? (pressed ? '#8D0020' : Colors.primaryContainer) : '#C8C4B0',
+            backgroundColor: selected ? (pressed ? Colors.primary : Colors.primaryContainer) : '#C8C4B0',
             borderRadius: moderateScale(16),
             paddingVertical: moderateScale(18),
             alignItems: 'center',
             transform: [{ scale: pressed && selected ? 0.97 : 1 }],
           })}
         >
-          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: '#FFFFFF' }}>
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: Colors.onPrimary }}>
             Continue
           </Text>
         </Pressable>

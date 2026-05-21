@@ -35,6 +35,7 @@ export default function ProfileScreen() {
   const wordsLearned = useWordsLearned();
   const user = useAuthStore((s) => s.user);
   const learningMode = useUserStore((s) => s.learningMode);
+  const displayName = useUserStore((s) => s.displayName);
   const setLearningMode = useUserStore((s) => s.setLearningMode);
   const modal = useModal();
 
@@ -72,6 +73,7 @@ export default function ProfileScreen() {
   }, []);
 
   const rawName =
+    displayName ||
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
     user?.email?.split('@')[0] ||

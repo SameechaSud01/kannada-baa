@@ -23,9 +23,14 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        Alert.alert('Check your email for a confirmation link!');
+        // Supabase returns no session when email confirmation is required.
+        // When auto-confirm is on, a session is returned and AppGate routes to onboarding —
+        // showing the alert in that case is misleading.
+        if (!data.session) {
+          Alert.alert('Check your email for a confirmation link!');
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

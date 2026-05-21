@@ -1,50 +1,67 @@
 import { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { Spacing } from '../../constants/spacing';
+import { Icons } from '../../constants/icons';
 import { ProgressDots } from '../../components/onboarding/ProgressDots';
-import { OptionCard } from '../../components/onboarding/OptionCard';
+import { useModal } from '../../components/modals/ModalHost';
+import { LearningTimeInfoDialog } from '../../components/modals/instances/LearningTimeInfoDialog';
 import { useUserStore } from '../../stores/useUserStore';
+import { useAuthStore } from '../../stores/useAuthStore';
+import { syncOnboardingToSupabase } from '../../services/api/onboarding';
 
-const COMMITMENTS = [
-  { value: 5 as const, label: '5 min / day', subtitle: 'Quick daily habit' },
-  { value: 10 as const, label: '10 min / day', subtitle: 'Steady progress' },
-  { value: 20 as const, label: '20 min / day', subtitle: 'Serious learner' },
+type Minutes = 5 | 10 | 20;
+
+const COMMITMENTS: { value: Minutes; label: string; subtitle: string }[] = [
+  { value: 5, label: '5 min / day', subtitle: 'Quick daily habit' },
+  { value: 10, label: '10 min / day', subtitle: 'Steady progress' },
+  { value: 20, label: '20 min / day', subtitle: 'Serious learner' },
 ];
 
 export default function CommitmentScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [selected, setSelected] = useState<5 | 10 | 20 | null>(null);
+  const modal = useModal();
+  const [selected, setSelected] = useState<Minutes | null>(null);
+
+  const openInfo = (minutes: Minutes) => {
+    modal.show({
+      kind: 'dialog',
+      component: LearningTimeInfoDialog,
+      props: { minutes, onDismiss: () => modal.dismiss() },
+      dim: 0.4,
+    });
+  };
 
   const handleFinish = () => {
     if (!selected) return;
 
-    // Collect data from this screen + previous screens via navigation params
-    // Since Expo Router doesn't pass params between stack screens easily,
-    // we read the goal screen's selection from the store (not yet saved)
-    // and the motivation screen's selection similarly.
-    // For a cleaner approach, we accumulate state and save on final screen.
-
-    // We need to collect all onboarding data. Since each screen manages local state,
-    // we'll use a simple approach: read from previous screens via route params
-    // isn't possible in Expo Router stacks, so we store intermediate state in the store.
-    // Let's use a pragmatic approach — collect from the global onboarding state accumulator.
-
-    // For now, save with defaults — the goal and motivation screens should have
-    // passed their data forward. We'll use the approach of reading from the store
-    // which gets set in each screen's "continue" handler.
-
     const store = useUserStore.getState();
+    const learningMode = store.learningMode ?? 'both';
+    const motivations = store.motivations.length > 0 ? store.motivations : [];
+
     useUserStore.getState().setOnboarding({
-      learningMode: store.learningMode ?? 'both',
-      motivations: store.motivations.length > 0 ? store.motivations : [],
+      learningMode,
+      motivations,
       dailyGoalMinutes: selected,
     });
+
+    const userId = useAuthStore.getState().user?.id;
+    if (userId) {
+      // Fire-and-forget: failure is logged inside the helper; user proceeds either way.
+      void syncOnboardingToSupabase({
+        userId,
+        name: store.displayName,
+        learningMode,
+        motivations,
+        dailyGoalMinutes: selected,
+      });
+    }
 
     router.replace('/(tabs)');
   };
@@ -53,13 +70,13 @@ export default function CommitmentScreen() {
     <View
       style={{
         flex: 1,
-        backgroundColor: '#FBFBE2',
+        backgroundColor: Colors.surface,
         paddingTop: insets.top + Spacing.xl,
         paddingBottom: insets.bottom + Spacing.xl,
         paddingHorizontal: Spacing.xxl,
       }}
     >
-      <ProgressDots total={4} current={3} />
+      <ProgressDots total={5} current={4} />
 
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Text
@@ -67,20 +84,22 @@ export default function CommitmentScreen() {
             fontFamily: Fonts.dmSans.bold,
             fontSize: moderateScale(11),
             letterSpacing: 2,
-            color: '#464646',
+            color: Colors.tertiary,
             textTransform: 'uppercase',
             marginBottom: Spacing.sm,
           }}
+          maxFontSizeMultiplier={1.4}
         >
-          Step 3 of 3
+          Step 4 of 4
         </Text>
         <Text
           style={{
             fontFamily: Fonts.dmSans.bold,
             fontSize: moderateScale(28),
-            color: '#1B1D0E',
+            color: Colors.onSurface,
             marginBottom: Spacing.sm,
           }}
+          maxFontSizeMultiplier={1.3}
         >
           How much time can{'\n'}you commit?
         </Text>
@@ -88,21 +107,23 @@ export default function CommitmentScreen() {
           style={{
             fontFamily: Fonts.dmSans.regular,
             fontSize: moderateScale(15),
-            color: '#464646',
+            color: Colors.tertiary,
             marginBottom: Spacing.xxxl,
           }}
+          maxFontSizeMultiplier={1.4}
         >
           Set your daily learning goal
         </Text>
 
         <View style={{ gap: Spacing.md }}>
           {COMMITMENTS.map((item) => (
-            <OptionCard
+            <CommitmentCard
               key={item.value}
               label={item.label}
               subtitle={item.subtitle}
               selected={selected === item.value}
               onPress={() => setSelected(item.value)}
+              onInfoPress={() => openInfo(item.value)}
             />
           ))}
         </View>
@@ -113,33 +134,124 @@ export default function CommitmentScreen() {
           onPress={() => router.back()}
           style={({ pressed }) => ({
             flex: 1,
-            backgroundColor: '#E4E4CC',
+            backgroundColor: Colors.surfaceContainerHighest,
             borderRadius: moderateScale(16),
             paddingVertical: moderateScale(18),
             alignItems: 'center',
             transform: [{ scale: pressed ? 0.97 : 1 }],
           })}
         >
-          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: '#1B1D0E' }}>
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: Colors.onSurface }}>
             Back
           </Text>
         </Pressable>
         <Pressable
           onPress={handleFinish}
+          disabled={!selected}
           style={({ pressed }) => ({
             flex: 2,
-            backgroundColor: selected ? (pressed ? '#8D0020' : Colors.primaryContainer) : '#C8C4B0',
+            backgroundColor: selected ? (pressed ? Colors.primary : Colors.primaryContainer) : '#C8C4B0',
             borderRadius: moderateScale(16),
             paddingVertical: moderateScale(18),
             alignItems: 'center',
             transform: [{ scale: pressed && selected ? 0.97 : 1 }],
           })}
         >
-          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: '#FFFFFF' }}>
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(16), color: Colors.onPrimary }}>
             Let's Go!
           </Text>
         </Pressable>
       </View>
     </View>
+  );
+}
+
+interface CommitmentCardProps {
+  label: string;
+  subtitle: string;
+  selected: boolean;
+  onPress: () => void;
+  onInfoPress: () => void;
+}
+
+function CommitmentCard({ label, subtitle, selected, onPress, onInfoPress }: CommitmentCardProps) {
+  const InfoIcon = Icons.info;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        backgroundColor: selected ? '#FFF5F5' : Colors.surfaceContainerLowest,
+        borderWidth: moderateScale(2),
+        borderColor: selected ? Colors.primaryContainer : '#E0DDD0',
+        borderRadius: moderateScale(16),
+        padding: moderateScale(18),
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        transform: [{ scale: pressed ? 0.97 : 1 }],
+      })}
+    >
+      <View style={{ flex: 1, marginRight: Spacing.md }}>
+        <Text
+          style={{
+            fontFamily: Fonts.dmSans.bold,
+            fontSize: moderateScale(16),
+            color: Colors.onSurface,
+            marginBottom: Spacing.xs,
+          }}
+          maxFontSizeMultiplier={1.4}
+        >
+          {label}
+        </Text>
+        <Text
+          style={{
+            fontFamily: Fonts.dmSans.regular,
+            fontSize: moderateScale(13),
+            color: Colors.tertiary,
+          }}
+          maxFontSizeMultiplier={1.4}
+        >
+          {subtitle}
+        </Text>
+      </View>
+      {selected ? (
+        <View
+          style={{
+            width: moderateScale(24),
+            height: moderateScale(24),
+            borderRadius: moderateScale(12),
+            backgroundColor: Colors.primaryContainer,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M5 12l5 5L20 7"
+              stroke={Colors.onPrimary}
+              strokeWidth={3}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
+        </View>
+      ) : (
+        <Pressable
+          onPress={onInfoPress}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={`More about ${label}`}
+          style={({ pressed }) => ({
+            width: moderateScale(28),
+            height: moderateScale(28),
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: pressed ? 0.5 : 1,
+          })}
+        >
+          <InfoIcon size={moderateScale(22)} color={Colors.tertiary} strokeWidth={2} />
+        </Pressable>
+      )}
+    </Pressable>
   );
 }

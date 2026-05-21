@@ -6,10 +6,14 @@ interface OnboardingData {
   learningMode: 'spoken' | 'written' | 'both';
   motivations: string[];
   dailyGoalMinutes: 5 | 10 | 20;
+  displayName?: string;
 }
 
 interface UserState {
+  /** Supabase user id this persisted data belongs to. `null` = pre-auth / not yet bound. */
+  userId: string | null;
   hasCompletedOnboarding: boolean;
+  displayName: string | null;
   learningMode: 'spoken' | 'written' | 'both' | null;
   motivations: string[];
   dailyGoalMinutes: 5 | 10 | 20 | null;
@@ -21,17 +25,24 @@ interface UserState {
   isHydrated: boolean;
 
   setOnboarding: (data: OnboardingData) => void;
+  setDisplayName: (name: string) => void;
   setLearningMode: (mode: 'spoken' | 'written' | 'both') => void;
   setMode: (mode: 'rowdy' | 'classic') => void;
   setHasSeenTtsWarning: (seen: boolean) => void;
   recordPermissionDenial: (kind: 'notifications' | 'mic') => void;
   setHydrated: (hydrated: boolean) => void;
+  /** Bind the persisted data to a Supabase user id. */
+  bindUser: (userId: string) => void;
+  /** Wipe all per-user state and bind to a fresh user id. Called on user switch. */
+  resetForUser: (userId: string) => void;
 }
 
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
+      userId: null,
       hasCompletedOnboarding: false,
+      displayName: null,
       learningMode: null,
       motivations: [],
       dailyGoalMinutes: null,
@@ -41,12 +52,15 @@ export const useUserStore = create<UserState>()(
       isHydrated: false,
 
       setOnboarding: (data) =>
-        set({
+        set((s) => ({
           hasCompletedOnboarding: true,
+          displayName: data.displayName?.trim() || s.displayName,
           learningMode: data.learningMode,
           motivations: data.motivations,
           dailyGoalMinutes: data.dailyGoalMinutes,
-        }),
+        })),
+
+      setDisplayName: (name) => set({ displayName: name.trim() || null }),
 
       setLearningMode: (learningMode) => set({ learningMode }),
 
@@ -63,6 +77,19 @@ export const useUserStore = create<UserState>()(
         })),
 
       setHydrated: (isHydrated) => set({ isHydrated }),
+
+      bindUser: (userId) => set({ userId }),
+
+      resetForUser: (userId) =>
+        set({
+          userId,
+          hasCompletedOnboarding: false,
+          displayName: null,
+          learningMode: null,
+          motivations: [],
+          dailyGoalMinutes: null,
+          // mode + permissionDenials + hasSeenTtsWarning are install-scoped, not user-scoped — keep them.
+        }),
     }),
     {
       name: 'user_prefs',

@@ -9,6 +9,7 @@ import { Fonts } from '../../constants/fonts';
 import { Spacing, Radius } from '../../constants/spacing';
 import { Icons } from '../../constants/icons';
 import { useAuthStore } from '../../stores/useAuthStore';
+import { useUserStore } from '../../stores/useUserStore';
 import { LESSONS, LESSON_ORDER } from '../../constants/lessons';
 import { PLANNED_LESSON_SLOTS, TOTAL_LESSON_SLOTS } from '../../constants/lessons/plannedLessons';
 import type { Phrase } from '../../constants/lessons/types';
@@ -48,6 +49,7 @@ export default function HomeScreen() {
   const completedLessons = useCompletedLessons();
   const streak = useStreak();
   const user = useAuthStore((s) => s.user);
+  const displayName = useUserStore((s) => s.displayName);
   const modal = useModal();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -61,6 +63,7 @@ export default function HomeScreen() {
   }, []);
 
   const rawName =
+    displayName ||
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
     user?.email?.split('@')[0] ||
