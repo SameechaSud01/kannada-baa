@@ -37,16 +37,18 @@ Actions: `setSession(session)`, `setLoading(loading)`.
 
 | Field | Type | Notes |
 |---|---|---|
+| `userId` | `string \| null` | Supabase `user.id` this persisted data belongs to. AppGate compares against `session.user.id` on every auth change; a mismatch triggers `resetForUser(newId)` + `useProgressStore.reset()`. Prevents prior-user onboarding state leaking into a new sign-up on the same install. |
 | `hasCompletedOnboarding` | `boolean` | Controls `/onboarding` redirect (see [NAVIGATION.md](NAVIGATION.md#auth--onboarding-gating)). |
-| `learningMode` | `'spoken' \| 'written' \| 'both' \| null` | From onboarding step 1. |
-| `motivations` | `string[]` | From onboarding step 2 (max 3). |
-| `dailyGoalMinutes` | `5 \| 10 \| 20 \| null` | From onboarding step 3. |
+| `displayName` | `string \| null` | From onboarding step 1 (`/onboarding/name`). Preferred over Supabase user metadata for greeting/avatar. See [spec_onboarding_tweaks](../../spec_docs/Sameecha/spec_onboarding_tweaks.md). |
+| `learningMode` | `'spoken' \| 'written' \| 'both' \| null` | From onboarding step 2. |
+| `motivations` | `string[]` | From onboarding step 3 (max 3; "Other" entries are stored as free-text). |
+| `dailyGoalMinutes` | `5 \| 10 \| 20 \| null` | From onboarding step 4. |
 | `mode` | `'rowdy' \| 'classic'` | `[LOCKED: SCHEDULED FOR REMOVAL]` — see [CONTENT.md](CONTENT.md#voice-system) and [CONTRADICTIONS.md](CONTRADICTIONS.md) C3. UI voice tone; drives `useCopy()` resolution today. |
 | `hasSeenTtsWarning` | `boolean` | One-time per install flag for the TTS-unavailable dialog. Added for [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.9. |
 | `permissionDenials` | `Partial<Record<'notifications' \| 'mic', string>>` | ISO timestamp of last "Not now" tap, per permission kind. Used to throttle re-asks (≤ once/week). Added for [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.8. |
 | `isHydrated` | `boolean` | Set true by `onRehydrateStorage`. |
 
-Actions: `setOnboarding(data)`, `setLearningMode(mode)`, `setMode(mode)`, `setHasSeenTtsWarning(seen)`, `recordPermissionDenial(kind)`, `setHydrated(hydrated)`. **`setMode` is also scheduled for removal alongside the field.**
+Actions: `setOnboarding(data)`, `setDisplayName(name)`, `setLearningMode(mode)`, `setMode(mode)`, `setHasSeenTtsWarning(seen)`, `recordPermissionDenial(kind)`, `setHydrated(hydrated)`, `bindUser(userId)`, `resetForUser(userId)`. **`setMode` is also scheduled for removal alongside the field.** `resetForUser` clears per-user fields (`hasCompletedOnboarding`, `displayName`, `learningMode`, `motivations`, `dailyGoalMinutes`) and keeps install-scoped flags (`mode`, `hasSeenTtsWarning`, `permissionDenials`).
 
 > **Note:** Profile screen collapses `learningMode`: `'written'` / `'both'` → `'fluency'`; `'spoken'` → `'spoken'`. This collapse should be a derived selector, not duplicated UI logic. **TODO:** refactor into `useFluencyMode()`.
 
@@ -69,7 +71,7 @@ Actions: `setOnboarding(data)`, `setLearningMode(mode)`, `setMode(mode)`, `setHa
 | `lastGoalCelebrationDate` | `string \| null` | ISO date the `GoalCompleteDialog` last fired. Prevents re-firing the same day. Added for [MODALS](../../spec_docs/Sameecha/MODALS.md) §6.7. |
 | `isHydrated` | `boolean` | Set true by `onRehydrateStorage`. |
 
-Actions: `updateLessonProgress(lessonId, phraseIndex)`, `completeLesson(lessonId, score, phrasesLearned, minutesPracticed)`, `updateStreak()`, `recordActivity()`, `markGoalCelebrated()`, `hydrateFromServerCompletions(slugs)`, `setHydrated(hydrated)`.
+Actions: `updateLessonProgress(lessonId, phraseIndex)`, `completeLesson(lessonId, score, phrasesLearned, minutesPracticed)`, `updateStreak()`, `recordActivity()`, `markGoalCelebrated()`, `hydrateFromServerCompletions(slugs)`, `setHydrated(hydrated)`, `reset()`. `reset()` wipes all progress and is called by `AppGate` on sign-out and when the signed-in Supabase user changes; `hydrateFromServerCompletions(slugs)` merges server-fetched completion slugs into `completedLessons` (deduped union, completion-only).
 
 > **Note (MODALS §6.7):** `completeLesson` now also increments `todayMinutes` by `minutesPracticed` (with date-rollover). `DoneCard` calls it with an `ESTIMATED_MIN_PER_LESSON = 5` placeholder until per-lesson timing is wired.
 

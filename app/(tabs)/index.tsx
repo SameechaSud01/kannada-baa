@@ -10,6 +10,7 @@ import { Spacing, Radius } from '../../constants/spacing';
 import { Icons } from '../../constants/icons';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useDbLessons } from '../../hooks/useLessons';
+import { useUserStore } from '../../stores/useUserStore';
 import { PLANNED_LESSON_SLOTS, TOTAL_LESSON_SLOTS } from '../../constants/lessons/plannedLessons';
 import type { Phrase } from '../../constants/lessons/types';
 import { deviceTtsAudioService } from '../../services/audio/deviceTtsAudioService';
@@ -41,6 +42,7 @@ export default function HomeScreen() {
   const completedLessons = useCompletedLessons();
   const streak = useStreak();
   const user = useAuthStore((s) => s.user);
+  const displayName = useUserStore((s) => s.displayName);
   const modal = useModal();
   const lessonsQuery = useDbLessons();
   const dbLessons = lessonsQuery.data ?? [];
@@ -56,6 +58,7 @@ export default function HomeScreen() {
   }, []);
 
   const rawName =
+    displayName ||
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
     user?.email?.split('@')[0] ||

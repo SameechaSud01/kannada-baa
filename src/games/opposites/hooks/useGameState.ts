@@ -17,8 +17,10 @@ type UseGameStateReturn = {
   phase: GamePhase;
   answerState: AnswerState;
   selectedOpt: string | null;
+  hintUsed: boolean;
   handleOptionTap: (kn: string) => void;
   handleNext: () => void;
+  useHint: () => void;
   restart: () => void;
 };
 
@@ -49,6 +51,12 @@ export function useGameState(): UseGameStateReturn {
   const [phase, setPhase] = useState<GamePhase>('playing');
   const [answerState, setAnswerState] = useState<AnswerState>('unanswered');
   const [selectedOpt, setSelectedOpt] = useState<string | null>(null);
+  const [hintUsed, setHintUsed] = useState(false);
+
+  const useHint = useCallback(() => {
+    if (answerState !== 'unanswered') return;
+    setHintUsed(true);
+  }, [answerState]);
 
   const handleOptionTap = useCallback(
     (kn: string) => {
@@ -57,14 +65,14 @@ export function useGameState(): UseGameStateReturn {
       setSelectedOpt(kn);
       if (kn === questions[currentIndex].answer) {
         setAnswerState('correct');
-        setScore((s) => s + 1);
+        setScore((s) => s + (hintUsed ? 0.5 : 1));
         setStreak((s) => s + 1);
       } else {
         setAnswerState('wrong');
         setStreak(0);
       }
     },
-    [answerState, currentIndex],
+    [answerState, currentIndex, hintUsed],
   );
 
   const handleNext = useCallback(() => {
@@ -76,6 +84,7 @@ export function useGameState(): UseGameStateReturn {
       setCurrentIndex((i) => i + 1);
       setAnswerState('unanswered');
       setSelectedOpt(null);
+      setHintUsed(false);
     }
   }, [answerState, currentIndex]);
 
@@ -87,6 +96,7 @@ export function useGameState(): UseGameStateReturn {
     setPhase('playing');
     setAnswerState('unanswered');
     setSelectedOpt(null);
+    setHintUsed(false);
   }, []);
 
   return {
@@ -99,8 +109,10 @@ export function useGameState(): UseGameStateReturn {
     phase,
     answerState,
     selectedOpt,
+    hintUsed,
     handleOptionTap,
     handleNext,
+    useHint,
     restart,
   };
 }

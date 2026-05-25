@@ -10,16 +10,32 @@ import type { AnswerState } from '../types';
 type Props = {
   answerState: AnswerState;
   streak: number;
+  hintUsed: boolean;
 };
 
-const FeedbackBanner: React.FC<Props> = ({ answerState, streak }) => {
+const FeedbackBanner: React.FC<Props> = ({ answerState, streak, hintUsed }) => {
   if (answerState === 'unanswered') return null;
 
   const isCorrect = answerState === 'correct';
+<<<<<<< Updated upstream
   const isOnRoll = isCorrect && streak >= 3;
   const Icon = isOnRoll ? Icons.streak : isCorrect ? Icons.correct : Icons.wrong;
   const message = isOnRoll ? 'Correct! On a roll!' : isCorrect ? 'Correct!' : 'Wrong!';
   const textColor = isCorrect ? Colors.onSecondaryContainer : Colors.primary;
+=======
+  let message: string;
+  if (isCorrect) {
+    if (hintUsed) {
+      message = '✓ Correct! (½ pt — hint used)';
+    } else if (streak >= 3) {
+      message = '🔥 Correct! On a roll!';
+    } else {
+      message = '✓ Correct!';
+    }
+  } else {
+    message = '✗ Wrong!';
+  }
+>>>>>>> Stashed changes
 
   return (
     <View

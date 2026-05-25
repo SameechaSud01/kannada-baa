@@ -33,7 +33,8 @@ export default function LoginScreen() {
         });
         if (error) throw error;
         // Defensive: only fires if someone re-enables email confirmation in Supabase.
-        // Under the current "Confirm email" OFF setting, signUp returns a live session.
+        // Under the current "Confirm email" OFF setting, signUp returns a live session
+        // and AppGate routes to onboarding — showing this toast then would be misleading.
         if (!data.session) {
           Toasts.confirmEmailPending();
         }

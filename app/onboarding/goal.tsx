@@ -33,39 +33,41 @@ export default function GoalScreen() {
         paddingHorizontal: Spacing.xxl,
       }}
     >
-      <ProgressDots total={4} current={1} />
+      <ProgressDots total={5} current={2} />
 
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Text
           style={{
             fontFamily: Fonts.dmSans.bold,
             fontSize: moderateScale(11),
-            letterSpacing: 2.5,
+            letterSpacing: 2,
             color: Colors.tertiary,
             textTransform: 'uppercase',
             marginBottom: Spacing.sm,
           }}
+          maxFontSizeMultiplier={1.4}
         >
-          Step 1 of 3
+          Step 2 of 4
         </Text>
         <Text
           style={{
             fontFamily: Fonts.dmSans.bold,
-            fontSize: moderateScale(22),
+            fontSize: moderateScale(28),
             color: Colors.onSurface,
             marginBottom: Spacing.sm,
           }}
+          maxFontSizeMultiplier={1.3}
         >
           What do you want to learn?
         </Text>
         <Text
           style={{
             fontFamily: Fonts.dmSans.regular,
-            fontSize: moderateScale(13),
-            lineHeight: moderateScale(18),
+            fontSize: moderateScale(15),
             color: Colors.tertiary,
             marginBottom: Spacing.xxxl,
           }}
+          maxFontSizeMultiplier={1.4}
         >
           Choose your learning focus
         </Text>
@@ -107,7 +109,7 @@ export default function GoalScreen() {
             }
           }}
           style={({ pressed }) => ({
-            flex: 1,
+            flex: 2,
             backgroundColor: selected ? (pressed ? Colors.primary : Colors.primaryContainer) : Colors.surfaceDim,
             borderRadius: moderateScale(16),
             paddingVertical: moderateScale(18),

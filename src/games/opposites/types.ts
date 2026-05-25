@@ -1,5 +1,6 @@
 export type Option = {
   kn: string;
+  tr: string;
   en: string;
 };
 

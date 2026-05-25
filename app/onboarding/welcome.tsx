@@ -24,7 +24,7 @@ export default function WelcomeScreen() {
         justifyContent: 'space-between',
       }}
     >
-      <ProgressDots total={4} current={0} />
+      <ProgressDots total={5} current={0} />
 
       <View style={{ alignItems: 'center' }}>
         <Text
@@ -66,7 +66,7 @@ export default function WelcomeScreen() {
       </View>
 
       <Pressable
-        onPress={() => router.push('/onboarding/goal')}
+        onPress={() => router.push('/onboarding/name')}
         style={({ pressed }) => ({
           backgroundColor: pressed ? Colors.primary : Colors.primaryContainer,
           borderRadius: moderateScale(16),

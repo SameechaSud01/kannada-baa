@@ -1,18 +1,26 @@
 import React from 'react';
+<<<<<<< Updated upstream
 import { View, Text } from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '@/constants/colors';
 import { Spacing, Radius } from '@/constants/spacing';
 import { Fonts } from '@/constants/fonts';
 import { Icons } from '@/constants/icons';
+=======
+import { View, Text, Pressable } from 'react-native';
+>>>>>>> Stashed changes
 
 type Props = {
   word: string;
   tr: string;
   meaning: string;
   streak: number;
+  hintUsed: boolean;
+  isAnswered: boolean;
+  onHint: () => void;
 };
 
+<<<<<<< Updated upstream
 const QuestionCard: React.FC<Props> = ({ word, tr, meaning, streak }) => (
   <View
     style={{
@@ -33,6 +41,11 @@ const QuestionCard: React.FC<Props> = ({ word, tr, meaning, streak }) => (
         marginBottom: Spacing.sm,
       }}
     >
+=======
+const QuestionCard: React.FC<Props> = ({ word, tr, meaning, streak, hintUsed, isAnswered, onHint }) => (
+  <View className='rounded-2xl bg-gray-100 p-6 w-full items-center'>
+    <Text className='text-xs uppercase tracking-widest text-gray-400 mb-2'>
+>>>>>>> Stashed changes
       find the opposite of
     </Text>
     <Text
@@ -45,6 +58,7 @@ const QuestionCard: React.FC<Props> = ({ word, tr, meaning, streak }) => (
     >
       {word}
     </Text>
+<<<<<<< Updated upstream
     <Text
       style={{
         fontFamily: Fonts.lora.italic,
@@ -65,6 +79,20 @@ const QuestionCard: React.FC<Props> = ({ word, tr, meaning, streak }) => (
     >
       ({meaning})
     </Text>
+=======
+    <Text className='text-sm italic text-gray-500 mt-1'>{tr}</Text>
+
+    {hintUsed ? (
+      <Text className='text-xs text-amber-700 mt-2 font-medium'>({meaning})</Text>
+    ) : !isAnswered ? (
+      <Pressable
+        onPress={onHint}
+        className='mt-3 border border-amber-400 rounded-full px-4 py-1'
+      >
+        <Text className='text-amber-700 text-xs font-semibold'>Hint</Text>
+      </Pressable>
+    ) : null}
+>>>>>>> Stashed changes
 
     {streak >= 2 && (
       <View

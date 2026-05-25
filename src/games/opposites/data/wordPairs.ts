@@ -7,10 +7,10 @@ export const RAW_PAIRS: QuestionPair[] = [
     meaning: 'big',
     answer: 'ಚಿಕ್ಕ',
     opts: [
-      { kn: 'ಚಿಕ್ಕ', en: 'small' },
-      { kn: 'ಉದ್ದ', en: 'tall' },
-      { kn: 'ಭಾರ', en: 'heavy' },
-      { kn: 'ಶಕ್ತ', en: 'strong' },
+      { kn: 'ಚಿಕ್ಕ', tr: 'cikka', en: 'small' },
+      { kn: 'ಉದ್ದ', tr: 'udda', en: 'tall' },
+      { kn: 'ಭಾರ', tr: 'bhāra', en: 'heavy' },
+      { kn: 'ಶಕ್ತ', tr: 'śakta', en: 'strong' },
     ],
   },
   {
@@ -19,10 +19,10 @@ export const RAW_PAIRS: QuestionPair[] = [
     meaning: 'light',
     answer: 'ಕತ್ತಲು',
     opts: [
-      { kn: 'ಕತ್ತಲು', en: 'darkness' },
-      { kn: 'ಬಿಸಿಲು', en: 'sunshine' },
-      { kn: 'ಬೆಂಕಿ', en: 'fire' },
-      { kn: 'ರಾತ್ರಿ', en: 'night' },
+      { kn: 'ಕತ್ತಲು', tr: 'kattalu', en: 'darkness' },
+      { kn: 'ಬಿಸಿಲು', tr: 'bisilu', en: 'sunshine' },
+      { kn: 'ಬೆಂಕಿ', tr: 'beṃki', en: 'fire' },
+      { kn: 'ರಾತ್ರಿ', tr: 'rātri', en: 'night' },
     ],
   },
   {
@@ -31,10 +31,10 @@ export const RAW_PAIRS: QuestionPair[] = [
     meaning: 'daytime',
     answer: 'ರಾತ್ರಿ',
     opts: [
-      { kn: 'ಮಧ್ಯಾಹ್ನ', en: 'noon' },
-      { kn: 'ರಾತ್ರಿ', en: 'night' },
-      { kn: 'ಸಂಜೆ', en: 'evening' },
-      { kn: 'ಬೆಳಿಗ್ಗೆ', en: 'morning' },
+      { kn: 'ಮಧ್ಯಾಹ್ನ', tr: 'madhyāhna', en: 'noon' },
+      { kn: 'ರಾತ್ರಿ', tr: 'rātri', en: 'night' },
+      { kn: 'ಸಂಜೆ', tr: 'saṃje', en: 'evening' },
+      { kn: 'ಬೆಳಿಗ್ಗೆ', tr: 'beḷigge', en: 'morning' },
     ],
   },
   {
@@ -43,10 +43,10 @@ export const RAW_PAIRS: QuestionPair[] = [
     meaning: 'happiness',
     answer: 'ದುಃಖ',
     opts: [
-      { kn: 'ನಗು', en: 'laughter' },
-      { kn: 'ಪ್ರೀತಿ', en: 'love' },
-      { kn: 'ದುಃಖ', en: 'sadness' },
-      { kn: 'ಭಯ', en: 'fear' },
+      { kn: 'ನಗು', tr: 'nagu', en: 'laughter' },
+      { kn: 'ಪ್ರೀತಿ', tr: 'prīti', en: 'love' },
+      { kn: 'ದುಃಖ', tr: 'duḥkha', en: 'sadness' },
+      { kn: 'ಭಯ', tr: 'bhaya', en: 'fear' },
     ],
   },
   {
@@ -55,10 +55,10 @@ export const RAW_PAIRS: QuestionPair[] = [
     meaning: 'above',
     answer: 'ಕೆಳಗೆ',
     opts: [
-      { kn: 'ಹತ್ತಿರ', en: 'near' },
-      { kn: 'ದೂರ', en: 'far' },
-      { kn: 'ಕೆಳಗೆ', en: 'below' },
-      { kn: 'ಒಳಗೆ', en: 'inside' },
+      { kn: 'ಹತ್ತಿರ', tr: 'hattira', en: 'near' },
+      { kn: 'ದೂರ', tr: 'dūra', en: 'far' },
+      { kn: 'ಕೆಳಗೆ', tr: 'keḷage', en: 'below' },
+      { kn: 'ಒಳಗೆ', tr: 'oḷage', en: 'inside' },
     ],
   },
   {
@@ -67,10 +67,10 @@ export const RAW_PAIRS: QuestionPair[] = [
     meaning: 'new',
     answer: 'ಹಳೆಯ',
     opts: [
-      { kn: 'ಹಳೆಯ', en: 'old' },
-      { kn: 'ಚೆಂದ', en: 'beautiful' },
-      { kn: 'ಶ್ರೇಷ್ಠ', en: 'great' },
-      { kn: 'ಕಷ್ಟ', en: 'difficult' },
+      { kn: 'ಹಳೆಯ', tr: 'haḷeya', en: 'old' },
+      { kn: 'ಚೆಂದ', tr: 'ceṃda', en: 'beautiful' },
+      { kn: 'ಶ್ರೇಷ್ಠ', tr: 'śrēṣṭha', en: 'great' },
+      { kn: 'ಕಷ್ಟ', tr: 'kaṣṭa', en: 'difficult' },
     ],
   },
   {
@@ -79,10 +79,10 @@ export const RAW_PAIRS: QuestionPair[] = [
     meaning: 'fast',
     answer: 'ನಿಧಾನ',
     opts: [
-      { kn: 'ನಿಧಾನ', en: 'slow' },
-      { kn: 'ಮೆಲ್ಲ', en: 'gently' },
-      { kn: 'ತಕ್ಷಣ', en: 'instant' },
-      { kn: 'ಸ್ವಲ್ಪ', en: 'a little' },
+      { kn: 'ನಿಧಾನ', tr: 'nidhāna', en: 'slow' },
+      { kn: 'ಮೆಲ್ಲ', tr: 'mella', en: 'gently' },
+      { kn: 'ತಕ್ಷಣ', tr: 'takṣaṇa', en: 'instant' },
+      { kn: 'ಸ್ವಲ್ಪ', tr: 'svalpa', en: 'a little' },
     ],
   },
   {
@@ -91,10 +91,10 @@ export const RAW_PAIRS: QuestionPair[] = [
     meaning: 'cold',
     answer: 'ಬಿಸಿ',
     opts: [
-      { kn: 'ಮಳೆ', en: 'rain' },
-      { kn: 'ಗಾಳಿ', en: 'wind' },
-      { kn: 'ಬೆಚ್ಚ', en: 'warm' },
-      { kn: 'ಬಿಸಿ', en: 'hot' },
+      { kn: 'ಮಳೆ', tr: 'maḷe', en: 'rain' },
+      { kn: 'ಗಾಳಿ', tr: 'gāḷi', en: 'wind' },
+      { kn: 'ಬೆಚ್ಚ', tr: 'becca', en: 'warm' },
+      { kn: 'ಬಿಸಿ', tr: 'bisi', en: 'hot' },
     ],
   },
   {
@@ -103,10 +103,10 @@ export const RAW_PAIRS: QuestionPair[] = [
     meaning: 'good',
     answer: 'ಕೆಟ್ಟ',
     opts: [
-      { kn: 'ಕೆಟ್ಟ', en: 'bad' },
-      { kn: 'ಸುಂದರ', en: 'pretty' },
-      { kn: 'ಸರಿ', en: 'correct' },
-      { kn: 'ತಪ್ಪು', en: 'wrong' },
+      { kn: 'ಕೆಟ್ಟ', tr: 'keṭṭa', en: 'bad' },
+      { kn: 'ಸುಂದರ', tr: 'sundara', en: 'pretty' },
+      { kn: 'ಸರಿ', tr: 'sari', en: 'correct' },
+      { kn: 'ತಪ್ಪು', tr: 'tappu', en: 'wrong' },
     ],
   },
   {
@@ -115,10 +115,10 @@ export const RAW_PAIRS: QuestionPair[] = [
     meaning: 'in front',
     answer: 'ಹಿಂದೆ',
     opts: [
-      { kn: 'ಪಕ್ಕ', en: 'beside' },
-      { kn: 'ಹಿಂದೆ', en: 'behind' },
-      { kn: 'ಮಧ್ಯ', en: 'middle' },
-      { kn: 'ತುದಿ', en: 'end' },
+      { kn: 'ಪಕ್ಕ', tr: 'pakka', en: 'beside' },
+      { kn: 'ಹಿಂದೆ', tr: 'hinde', en: 'behind' },
+      { kn: 'ಮಧ್ಯ', tr: 'madhya', en: 'middle' },
+      { kn: 'ತುದಿ', tr: 'tudi', en: 'end' },
     ],
   },
 ];

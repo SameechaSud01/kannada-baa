@@ -32,19 +32,23 @@ export async function fetchUserRow(userId: string): Promise<UserRow | null> {
 export async function completeOnboarding(
   userId: string,
   input: {
+    name?: string | null;
     learning_mode: LearningMode;
     motivations: string[];
     daily_goal_minutes: DailyGoalMinutes;
   },
 ): Promise<UserRow> {
+  const update: Record<string, unknown> = {
+    learning_mode: input.learning_mode,
+    motivations: input.motivations,
+    daily_goal_minutes: input.daily_goal_minutes,
+    onboarding_completed_at: new Date().toISOString(),
+  };
+  if (input.name !== undefined) update.name = input.name;
+
   const { data, error } = await supabase
     .from('users')
-    .update({
-      learning_mode: input.learning_mode,
-      motivations: input.motivations,
-      daily_goal_minutes: input.daily_goal_minutes,
-      onboarding_completed_at: new Date().toISOString(),
-    })
+    .update(update)
     .eq('id', userId)
     .select(
       'id, email, name, avatar_url, learning_mode, motivations, daily_goal_minutes, current_streak, onboarding_completed_at, created_at',

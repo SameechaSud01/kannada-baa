@@ -24,8 +24,10 @@ const OppositeGame: React.FC = () => {
     phase,
     answerState,
     selectedOpt,
+    hintUsed,
     handleOptionTap,
     handleNext,
+    useHint,
     restart,
   } = useGameState();
 
@@ -83,6 +85,9 @@ const OppositeGame: React.FC = () => {
           tr={currentQuestion.tr}
           meaning={currentQuestion.meaning}
           streak={streak}
+          hintUsed={hintUsed}
+          isAnswered={answerState !== 'unanswered'}
+          onHint={useHint}
         />
 
         <OptionGrid
@@ -93,7 +98,7 @@ const OppositeGame: React.FC = () => {
           onSelect={handleOptionTap}
         />
 
-        <FeedbackBanner answerState={answerState} streak={streak} />
+        <FeedbackBanner answerState={answerState} streak={streak} hintUsed={hintUsed} />
 
         {answerState !== 'unanswered' && (
           <Pressable

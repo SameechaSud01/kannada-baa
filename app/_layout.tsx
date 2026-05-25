@@ -103,6 +103,7 @@ function AppGate() {
   const segments = useSegments();
   const { session, isLoading: authLoading, setSession, setLoading } = useAuthStore();
   const hasCompletedOnboarding = useUserStore((s) => s.hasCompletedOnboarding);
+  const storedUserId = useUserStore((s) => s.userId);
   const userHydrated = useUserStore((s) => s.isHydrated);
   const progressHydrated = useProgressStore((s) => s.isHydrated);
 
@@ -142,8 +143,26 @@ function AppGate() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Bind persisted per-user state to the current Supabase user; reset on user switch.
+  // Runs before the routing effect below so onboarding/progress flags reflect the right user.
+  useEffect(() => {
+    if (!userHydrated || !progressHydrated) return;
+    const currentUserId = session?.user?.id ?? null;
+    if (!currentUserId) return;
+    if (storedUserId === null) {
+      useUserStore.getState().bindUser(currentUserId);
+    } else if (storedUserId !== currentUserId) {
+      useUserStore.getState().resetForUser(currentUserId);
+      useProgressStore.getState().reset();
+    }
+  }, [session?.user?.id, storedUserId, userHydrated, progressHydrated]);
+
   useEffect(() => {
     if (authLoading || !userHydrated || !progressHydrated) return;
+
+    // Wait one tick after a user switch so the store reset above lands before we read flags.
+    const currentUserId = session?.user?.id ?? null;
+    if (currentUserId && storedUserId !== null && storedUserId !== currentUserId) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboarding = segments[0] === 'onboarding';
@@ -161,7 +180,7 @@ function AppGate() {
     } else if (session && hasCompletedOnboarding && inOnboarding) {
       router.replace('/(tabs)');
     }
-  }, [session, authLoading, segments, hasCompletedOnboarding, userHydrated, progressHydrated]);
+  }, [session, authLoading, segments, hasCompletedOnboarding, storedUserId, userHydrated, progressHydrated]);
 
   return <Slot />;
 }
