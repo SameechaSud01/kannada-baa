@@ -96,7 +96,6 @@ const OptionButton: React.FC<Props> = ({ option, state, onPress }) => {
           minHeight: moderateScale(80),
         }}
       >
-<<<<<<< Updated upstream
         <Text
           style={{
             fontFamily: Fonts.notoSerifKannada.bold,
@@ -134,14 +133,6 @@ const OptionButton: React.FC<Props> = ({ option, state, onPress }) => {
         )}
       </Pressable>
     </Animated.View>
-=======
-        {option.kn}
-      </Text>
-      <Text className={`text-xs text-center mt-1 italic ${GLOSS_CLASSES[state]}`}>
-        {option.tr}
-      </Text>
-    </Pressable>
->>>>>>> Stashed changes
   );
 };
 

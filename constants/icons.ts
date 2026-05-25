@@ -93,7 +93,7 @@ export const Icons = {
   info: IconInfoCircle,
   clock: IconClock,
 
-  // Lesson runner — drill / output / intake (replaces former emoji glyphs)
+  // Lesson runner — practice / shadowing feedback glyphs
   correct: IconCircleCheck,
   wrong: IconCircleX,
   close: IconX,

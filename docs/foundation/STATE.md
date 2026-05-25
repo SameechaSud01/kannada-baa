@@ -2,7 +2,7 @@
 doc: STATE
 status: reviewed
 owner: samee
-last-reviewed: 2026-05-19
+last-reviewed: 2026-05-23
 related:
   - SCOPE.md
   - NAVIGATION.md
@@ -126,32 +126,50 @@ Wrap stores; **screens should not read stores directly.** Defined in [hooks/prog
 
 ## Server state — Supabase
 
-Client: [services/api/supabase.ts](../../services/api/supabase.ts). Singleton; reads `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` (throws if missing). `public.users`, `public.lessons`, and `public.user_lesson_progress` are the tables in active use; per-game progress tables exist in the DB but the app does not yet read or write them.
+Client: [services/api/supabase.ts](../../services/api/supabase.ts). Singleton; reads `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` (throws if missing). `public.users`, `public.lessons`, and `public.user_lesson_progress` are the tables the app reads or writes today. Everything else in the schema is scaffolded for future features and untouched by app code (verified via grep across `app/`, `components/`, `hooks/`, `stores/`, `services/`).
 
 ### Tables
 
-`[OPEN]`
+`[LOCKED]` — schema reflects the live Supabase project as of 2026-05-23. Use this as the canonical list; do not propose tables that contradict what is here without an explicit migration.
 
-> **TODO:** Define and document. No tables are read/written from the app today beyond Supabase's internal `auth.users`.
->
-> Likely needed for v1:
->
-> | Table | Purpose | Key columns |
-> |---|---|---|
-> | `profiles` | Persist `useUserStore` server-side | `user_id` (PK, FK auth.users), `learning_mode`, `motivations`, `daily_goal_minutes`, `mode` |
-> | `progress` | Persist `useProgressStore` server-side | `user_id` (PK, FK auth.users), `streak`, `xp`, `completed_lessons` (jsonb), `last_active_date` |
-> | `lesson_progress` | Per-lesson phrase resume | `user_id` + `lesson_id` (PK), `phrase_index` |
-> | `weekly_activity` | Activity log | `user_id`, `date` (PK), `activity_count` |
+#### Active (read or written by app code today)
+
+| Table | Purpose | Key columns | Accessor |
+|---|---|---|---|
+| `users` | Persist auth identity + onboarding answers | `id` (PK, FK `auth.users`), `email` (unique), `name`, `avatar_url`, `learning_mode` (`'spoken'\|'written'\|'both'`), `motivations` (`text[]`), `daily_goal_minutes` (`5\|10\|20`), `current_streak`, `onboarding_completed_at`, `created_at` | [services/api/users.ts](../../services/api/users.ts) (see [spec_auth_onboarding.md](../../spec_docs/Sameecha/spec_auth_onboarding.md)) |
+| `lessons` | Per-lesson row; FK anchor for completions | `id` (uuid PK), `lesson_no` (int unique, used for ordering), `title`, `slug` (text unique-where-not-null — bridge to `constants/lessons/*.ts` string IDs), `situation`, `real_world_prompt`, `content_json` (jsonb reference snapshot — see [spec_lesson_content_source.md](../../spec_docs/Sameecha/spec_lesson_content_source.md)), `audio_url` (nullable), `created_at` | [services/api/lessons.ts](../../services/api/lessons.ts) |
+| `user_lesson_progress` | "Did I finish lesson X?" + best score | `user_id` + `lesson_id` (composite PK), `completed_at` (nullable), `score` (nullable int, 0–100 check, personal-best semantic via `record_lesson_completion` RPC) | [services/api/progress.ts](../../services/api/progress.ts) (see [spec_progress_persistence.md](../../spec_docs/Sameecha/spec_progress_persistence.md)) |
+
+#### Scaffolded (exist in DB; not yet read or written by app code)
+
+| Table | Intended purpose | Key columns |
+|---|---|---|
+| `user_overall_progress` | Aggregated user metrics (looks materialized — has `recomputed_at`) | `user_id` (PK), `total_score`, `progress_pct`, `recomputed_at` |
+| `emergency_phrases` | Server-backed emergency content (today the app reads [data/emergency.json](../../data/emergency.json) — see [CONTRADICTIONS.md](CONTRADICTIONS.md) C10) | `id` (PK), `category`, `kannada`, `meaning`, `audio_url` (nullable), `sort_order` |
+| `word_of_the_day` | Daily featured word (no consuming feature yet) | `for_date` (date PK), `kannada`, `meaning`, `audio_url` (nullable) |
+| `conversation_items` / `conversation_progress` | Per-item state for the planned Conversations game ([CONTENT.md](CONTENT.md#planned-games-not-yet-implemented)) | items: `id` (PK), `lesson_id`, `scenario`, `turns_json` · progress: `user_id` + `item_id` (PK), `completed`, `attempts`, `last_played` |
+| `dictation_items` / `dictation_progress` | Server backing for the existing Dictation game (today reads completed-lesson phrases from TS — see [CONTENT.md](CONTENT.md#dictation--srcgamesdictation)) | items: `id` (PK), `lesson_id`, `audio_url`, `expected_answer` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` |
+| `image_match_items` / `image_match_progress` | Per-item state for the planned Image Match game | items: `id` (PK), `lesson_id`, `image_url`, `kannada`, `meaning` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` |
+| `opposites_items` / `opposites_progress` | Server backing for the existing Opposites game (today reads [wordPairs.ts](../../src/games/opposites/wordPairs.ts)) | items: `id` (PK), `lesson_id`, `word`, `opposite` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` |
+| `quick_quiz_items` / `quick_quiz_progress` | Per-item state for the planned Quick Quiz game | items: `id` (PK), `lesson_id`, `question`, `options_json`, `correct_index` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` |
+
+> **Note:** Wiring any scaffolded table requires its own spec — do not start reads/writes from a chat prompt. Each per-game table pair will need: a single accessor file under `services/api/`, an RLS pass mirroring the `ulp_*_own` pattern below, and a query/mutation key registered in the tables further down this doc.
 
 ### RLS policies
 
-`[OPEN]`
+`[LOCKED]` — for the three active tables. Scaffolded tables are `[OPEN]` (must be locked down before any client read/write).
 
-> **TODO:** Define. Default rule: `row.user_id === auth.uid()`.
+| Table | Policy | Source |
+|---|---|---|
+| `users` | `select`/`update` own row (`auth.uid() = id`); no insert/delete from client (trigger `on_auth_user_created` handles insert) | [2026-05-20_auth_onboarding.sql](../../services/api/migrations/2026-05-20_auth_onboarding.sql) |
+| `lessons` | `select` for any authenticated user; no client writes | [2026-05-20_progress_persistence.sql](../../services/api/migrations/2026-05-20_progress_persistence.sql) |
+| `user_lesson_progress` | `select`/`insert`/`update` own (`auth.uid() = user_id`); no delete. Writes go through the `record_lesson_completion` SECURITY INVOKER RPC for personal-best UPSERT semantic | [2026-05-20_progress_persistence.sql](../../services/api/migrations/2026-05-20_progress_persistence.sql) |
+
+> **TODO (scaffolded tables):** before the first client read/write of any per-game table, enable RLS with the default rule `auth.uid() = user_id` on `*_progress` and `select` for `authenticated` on `*_items`. `emergency_phrases` and `word_of_the_day` are public read-only — same `select` for `authenticated` pattern.
 
 ## TanStack Query
 
-`QueryClient` initialised in [app/_layout.tsx](../../app/_layout.tsx) with defaults. **No queries currently active** — lesson content is static.
+`QueryClient` initialised in [app/_layout.tsx](../../app/_layout.tsx) with defaults. One read query (`['lesson-completions', userId]`) and one mutation (`['completeLesson']`) are live (see [spec_progress_persistence.md](../../spec_docs/Sameecha/spec_progress_persistence.md)). Lesson reference data (`public.lessons` rows) is fetched ad-hoc through [services/api/lessons.ts](../../services/api/lessons.ts) without a Query wrapper today.
 
 ### Query key conventions
 

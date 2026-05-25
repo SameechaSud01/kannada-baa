@@ -4,29 +4,23 @@ import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { Spacing, Radius } from '../../constants/spacing';
-import { ProgressDots } from '../onboarding/ProgressDots';
 import type { Lesson } from '../../constants/lessons/types';
 
-interface ScenarioPhaseProps {
+interface SituationPhaseProps {
   lesson: Lesson;
-  onContinue: () => void;
+  onAdvance: () => void;
 }
 
-export function ScenarioPhase({ lesson, onContinue }: ScenarioPhaseProps) {
+export function SituationPhase({ lesson, onAdvance }: SituationPhaseProps) {
   const insets = useSafeAreaInsets();
-  const { title, setup } = lesson.situation;
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.surface }}>
-      <View style={{ paddingTop: insets.top + Spacing.lg, paddingHorizontal: Spacing.lg }}>
-        <ProgressDots total={4} current={0} />
-      </View>
-
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
           paddingHorizontal: Spacing.lg,
-          paddingTop: Spacing.xxl,
+          paddingTop: insets.top + Spacing.xxxl,
           paddingBottom: Spacing.lg,
         }}
       >
@@ -52,7 +46,7 @@ export function ScenarioPhase({ lesson, onContinue }: ScenarioPhaseProps) {
               marginBottom: Spacing.sm,
             }}
           >
-            Scenario
+            Situation
           </Text>
           <Text
             style={{
@@ -63,7 +57,7 @@ export function ScenarioPhase({ lesson, onContinue }: ScenarioPhaseProps) {
               lineHeight: moderateScale(26),
             }}
           >
-            {title}
+            {lesson.title}
           </Text>
         </View>
 
@@ -76,7 +70,7 @@ export function ScenarioPhase({ lesson, onContinue }: ScenarioPhaseProps) {
             marginBottom: Spacing.md,
           }}
         >
-          {title}
+          {lesson.title}
         </Text>
 
         <Text
@@ -87,15 +81,15 @@ export function ScenarioPhase({ lesson, onContinue }: ScenarioPhaseProps) {
             lineHeight: moderateScale(24),
           }}
         >
-          {setup}
+          {lesson.situation}
         </Text>
       </ScrollView>
 
       <View style={{ padding: Spacing.lg, paddingBottom: insets.bottom + Spacing.lg }}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Continue to learn the phrases"
-          onPress={onContinue}
+          accessibilityLabel="Start the lesson"
+          onPress={onAdvance}
           style={({ pressed }) => ({
             backgroundColor: pressed ? Colors.primary : Colors.primaryContainer,
             borderRadius: Radius.md,
@@ -113,7 +107,7 @@ export function ScenarioPhase({ lesson, onContinue }: ScenarioPhaseProps) {
               color: Colors.onPrimary,
             }}
           >
-            Let's learn the phrases →
+            Let's start
           </Text>
         </Pressable>
       </View>

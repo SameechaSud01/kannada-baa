@@ -1,86 +1,117 @@
 import { useState, useCallback } from 'react';
-import type { Lesson, LessonId } from '../constants/lessons/types';
-import { LESSONS } from '../constants/lessons';
+import type { Lesson, LessonPhase } from '../constants/lessons/types';
 
-export type LessonPhase = 'idle' | 'scenario' | 'intake' | 'drill' | 'output' | 'done';
+export type PracticeStep = 'listen' | 'say';
 
-export type DrillAttempt = {
-  itemIndex: number;
-  phraseId: string;
-  correct: boolean;
-};
-
-export type LessonRunnerState = {
+export interface LessonRunnerState {
   phase: LessonPhase;
-  lesson: Lesson | null;
-  intakeIndex: number;
-  drillIndex: number;
-  drillAttempts: DrillAttempt[];
-};
+  wordIndex: number;
+  practiceWordIndex: number;
+  practiceWordStep: PracticeStep;
+  phraseIndex: number;
+  practicePhrasesIndex: number;
+  practicePhrasesStep: PracticeStep;
+}
 
-export type LessonRunner = {
-  state: LessonRunnerState;
+export interface LessonRunner extends LessonRunnerState {
   advance: () => void;
-  goBack: () => void;
   reset: () => void;
-  recordDrillAttempts: (attempts: DrillAttempt[]) => void;
-};
+}
 
-export function useLessonRunner(lessonId: LessonId): LessonRunner {
-  const lesson = LESSONS[lessonId] ?? null;
-  const [state, setState] = useState<LessonRunnerState>({
-    phase: lesson ? 'scenario' : 'idle',
-    lesson,
-    intakeIndex: 0,
-    drillIndex: 0,
-    drillAttempts: [],
-  });
+const initialState = (hasLesson: boolean): LessonRunnerState => ({
+  phase: hasLesson ? 'situation' : 'idle',
+  wordIndex: 0,
+  practiceWordIndex: 0,
+  practiceWordStep: 'listen',
+  phraseIndex: 0,
+  practicePhrasesIndex: 0,
+  practicePhrasesStep: 'listen',
+});
+
+export function useLessonRunner(lesson: Lesson | null): LessonRunner {
+  const [state, setState] = useState<LessonRunnerState>(() => initialState(!!lesson));
 
   const advance = useCallback(() => {
     setState((s) => {
-      if (!s.lesson) return s;
+      if (!lesson) return s;
+      const wordsLen = lesson.words.length;
+      const phrasesLen = lesson.phrases.length;
+
       switch (s.phase) {
         case 'idle':
-          return { ...s, phase: 'scenario' };
-        case 'scenario':
-          return { ...s, phase: 'intake' };
-        case 'intake':
-          if (s.intakeIndex < s.lesson.intake.length - 1) {
-            return { ...s, intakeIndex: s.intakeIndex + 1 };
+          return { ...s, phase: 'situation' };
+
+        case 'situation':
+          return { ...s, phase: 'teach_words', wordIndex: 0 };
+
+        case 'teach_words':
+          if (s.wordIndex < wordsLen - 1) {
+            return { ...s, wordIndex: s.wordIndex + 1 };
           }
-          return { ...s, phase: 'drill' };
-        case 'drill':
-          return { ...s, phase: 'output' };
-        case 'output':
+          return {
+            ...s,
+            phase: 'practice_words',
+            practiceWordIndex: 0,
+            practiceWordStep: 'listen',
+          };
+
+        case 'practice_words':
+          if (s.practiceWordStep === 'listen') {
+            return { ...s, practiceWordStep: 'say' };
+          }
+          // 'say' step → next word or move to teach_phrases
+          if (s.practiceWordIndex < wordsLen - 1) {
+            return {
+              ...s,
+              practiceWordIndex: s.practiceWordIndex + 1,
+              practiceWordStep: 'listen',
+            };
+          }
+          return { ...s, phase: 'teach_phrases', phraseIndex: 0 };
+
+        case 'teach_phrases':
+          if (s.phraseIndex < phrasesLen - 1) {
+            return { ...s, phraseIndex: s.phraseIndex + 1 };
+          }
+          return {
+            ...s,
+            phase: 'practice_phrases',
+            practicePhrasesIndex: 0,
+            practicePhrasesStep: 'listen',
+          };
+
+        case 'practice_phrases':
+          if (s.practicePhrasesStep === 'listen') {
+            return { ...s, practicePhrasesStep: 'say' };
+          }
+          if (s.practicePhrasesIndex < phrasesLen - 1) {
+            return {
+              ...s,
+              practicePhrasesIndex: s.practicePhrasesIndex + 1,
+              practicePhrasesStep: 'listen',
+            };
+          }
+          return { ...s, phase: 'summary' };
+
+        case 'summary':
+          return { ...s, phase: 'real_world' };
+
+        case 'real_world':
           return { ...s, phase: 'done' };
+
         case 'done':
           return s;
       }
     });
-  }, []);
-
-  const goBack = useCallback(() => {
-    setState((s) => {
-      if (s.phase === 'intake' && s.intakeIndex > 0) {
-        return { ...s, intakeIndex: s.intakeIndex - 1 };
-      }
-      return s;
-    });
-  }, []);
-
-  const reset = useCallback(() => {
-    setState({
-      phase: lesson ? 'scenario' : 'idle',
-      lesson,
-      intakeIndex: 0,
-      drillIndex: 0,
-      drillAttempts: [],
-    });
   }, [lesson]);
 
-  const recordDrillAttempts = useCallback((attempts: DrillAttempt[]) => {
-    setState((s) => ({ ...s, drillAttempts: attempts }));
-  }, []);
+  const reset = useCallback(() => {
+    setState(initialState(!!lesson));
+  }, [lesson]);
 
-  return { state, advance, goBack, reset, recordDrillAttempts };
+  return {
+    ...state,
+    advance,
+    reset,
+  };
 }

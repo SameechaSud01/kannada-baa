@@ -1,12 +1,12 @@
 /**
  * 8 lesson slots for the Learn-screen layout (Spec 01 §2).
  *
- * Content for slots beyond what `LESSON_ORDER` provides is content-blocked on
- * Spec 04. Until Spec 04 lands, slots without a real lesson render as
- * placeholders that cannot be opened.
+ * Slot metadata (glyph, subtitle) is the static fallback when a matching DB
+ * lesson row is not yet authored. Lesson content itself comes from
+ * `public.lessons` ordered by `lesson_no`.
  *
- * All Kannada glyphs and titles below are [Unverified] — placeholders intended
- * to be overwritten by Spec 04 content.
+ * Kannada glyphs and titles below are placeholders shown for locked / not-yet-
+ * authored slots.
  */
 export type PlannedLessonSlot = {
   slot: number;

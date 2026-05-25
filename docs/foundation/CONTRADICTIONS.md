@@ -2,7 +2,7 @@
 doc: CONTRADICTIONS
 status: living
 owner: samee
-last-reviewed: 2026-05-19
+last-reviewed: 2026-05-23
 related:
   - SCOPE.md
   - DESIGN.md
@@ -61,6 +61,20 @@ Numbering is monotonic and never reused. Gaps in the sequence (C2, C4, C5, C8…
 **Owning spec:** [DESIGN.md](DESIGN.md#styling-rules-implicit-in-tokens) (style approach) — and the README itself.
 
 **Resolution owed:** Edit [README.md](../../README.md) to drop NativeWind from the stack list (line 3) and from the "Styling" section (line 153), replacing with "inline styles + tokens in `constants/`". No CLAUDE.md edit needed beyond the new top-of-file session-start instruction.
+
+### C10 — `emergency_phrases` table exists in Supabase but app reads `data/emergency.json`
+
+**What's wrong:** [CONTENT.md](CONTENT.md#emergency-content) declares that emergency content lives in [data/emergency.json](../../data/emergency.json) (3 groups × 3 items, offline-first). The Supabase project ships an `emergency_phrases` table (columns: `id`, `category`, `kannada`, `meaning`, `audio_url`, `sort_order`) listed under "Scaffolded" in [STATE.md](STATE.md#scaffolded-exist-in-db-not-yet-read-or-written-by-app-code). No app code references `emergency_phrases` (verified grep across `app/`, `components/`, `hooks/`, `stores/`, `services/`), so the table is unused — but its existence signals intent to migrate that the JSON file does not reflect.
+
+**Why it matters:** A contributor seeing the table will reasonably assume it is the source of truth and either (a) start writing client reads against it, bypassing the offline-first JSON contract, or (b) keep the JSON in sync manually with no clear write path. Neither is what the spec says.
+
+**Owning specs:** [CONTENT.md](CONTENT.md#emergency-content) (canonical content shape), [STATE.md](STATE.md#scaffolded-exist-in-db-not-yet-read-or-written-by-app-code) (table inventory).
+
+**Resolution owed:** Owner picks one direction:
+- **JSON wins:** `emergency_phrases` is decommissioned (drop the table or document it as a holding pen). [CONTENT.md](CONTENT.md#emergency-content) stays canonical.
+- **DB wins:** A migration spec moves emergency content into `emergency_phrases`, the app gets a `services/api/emergency.ts` accessor + RLS, and [data/emergency.json](../../data/emergency.json) becomes a seed artifact (or is dropped). [CONTENT.md](CONTENT.md#emergency-content) updates to point at the table.
+
+Until decided, do not start writing against `emergency_phrases` from the client.
 
 ## Resolved
 

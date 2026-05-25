@@ -13,7 +13,7 @@ import { Spacing, Radius } from '../../constants/spacing';
 import { Fonts } from '../../constants/fonts';
 import { Icons } from '../../constants/icons';
 import type { Game } from '../../constants/games';
-import type { Lesson } from '../../hooks/useLessons';
+import type { LessonSelectorItem as Lesson } from '../../hooks/useLessons';
 
 type LessonSelectorProps = {
   game: Game;

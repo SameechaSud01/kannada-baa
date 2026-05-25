@@ -7,8 +7,9 @@ import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { Spacing, Radius } from '../../constants/spacing';
 import { Icons } from '../../constants/icons';
+import { GAMES, type Game } from '../../constants/games';
 import type { Lesson } from '../../constants/lessons/types';
-import type { DrillAttempt } from '../../hooks/useLessonRunner';
+import type { LessonRunner } from '../../hooks/useLessonRunner';
 import { useProgressStore } from '../../stores/progressStore';
 import { useUserStore } from '../../stores/useUserStore';
 import { useModal } from '../../components/modals/ModalHost';
@@ -24,21 +25,24 @@ import {
 } from '../../hooks/useCompleteLessonMutation';
 
 const ESTIMATED_MIN_PER_LESSON = 5;
+const COMPLETION_SCORE = 100;
+const DEFAULT_GAMES: Game[] = Object.values(GAMES);
 
 interface DoneCardProps {
   lesson: Lesson;
-  drillAttempts: DrillAttempt[];
-  onClose: () => void;
+  runner?: LessonRunner;
+  games?: Game[];
+  onClose?: () => void;
 }
 
-export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
+export function DoneCard({ lesson, games = DEFAULT_GAMES, onClose }: DoneCardProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [intentMarked, setIntentMarked] = useState(false);
 
-  const correctCount = drillAttempts.filter((a) => a.correct).length;
-  const totalDrills = drillAttempts.length;
-  const phraseCount = lesson.intake.length;
+  const phraseCount = lesson.phrases.length;
+  const wordCount = lesson.words.length;
+  const itemsLearned = wordCount + phraseCount;
 
   const markGoalCelebrated = useProgressStore((s) => s.markGoalCelebrated);
   const dailyGoalMinutes = useUserStore((s) => s.dailyGoalMinutes);
@@ -46,14 +50,9 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
   const mutation = useCompleteLessonMutation();
   const attemptedRef = useRef(false);
 
-  const score = totalDrills > 0 ? Math.round((correctCount / totalDrills) * 100) : 0;
-
   const runSave = () => {
     if (mutation.isPending || mutation.isSuccess) return;
 
-    // Snapshot pre-completion state so we can detect milestone transitions
-    // after the server write succeeds. Captured synchronously before mutate
-    // to avoid races with any other source of state change.
     const today = new Date().toISOString().split('T')[0];
     const pre = useProgressStore.getState();
     const prevStreak = pre.streak;
@@ -61,9 +60,9 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
 
     mutation.mutate(
       {
-        slug: lesson.id,
-        score,
-        phrasesLearned: phraseCount,
+        slug: lesson.slug,
+        score: COMPLETION_SCORE,
+        phrasesLearned: itemsLearned,
         minutesPracticed: ESTIMATED_MIN_PER_LESSON,
       },
       {
@@ -106,8 +105,8 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
           }
 
           console.log('[lesson] completed', {
-            lessonId: lesson.id,
-            phrasesLearned: phraseCount,
+            lessonSlug: lesson.slug,
+            itemsLearned,
           });
         },
         onError: (err) => {
@@ -145,12 +144,13 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
       runSave();
       return;
     }
-    onClose();
+    if (onClose) onClose();
+    else router.back();
   };
 
   const handleMarkIntent = () => {
     if (intentMarked) return;
-    console.log('[done] real-life intent marked', { lessonId: lesson.id });
+    console.log('[done] real-life intent marked', { lessonSlug: lesson.slug });
     setIntentMarked(true);
   };
 
@@ -178,22 +178,47 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
         </Text>
 
         {/* Stats block */}
-        <View style={{ alignItems: 'flex-start', alignSelf: 'center', gap: Spacing.sm, marginBottom: Spacing.xl }}>
+        <View
+          style={{
+            alignItems: 'flex-start',
+            alignSelf: 'center',
+            gap: Spacing.sm,
+            marginBottom: Spacing.xl,
+          }}
+        >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
             <Icons.tabLearn size={18} color={Colors.primary} />
-            <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: moderateScale(15), color: Colors.onSurface }}>
-              {phraseCount} {phraseCount === 1 ? 'phrase' : 'phrases'} learned
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.medium,
+                fontSize: moderateScale(15),
+                color: Colors.onSurface,
+              }}
+            >
+              {wordCount} {wordCount === 1 ? 'word' : 'words'} learned
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
             <Icons.tabPractice size={18} color={Colors.primary} />
-            <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: moderateScale(15), color: Colors.onSurface }}>
-              {correctCount} of {totalDrills} drills correct
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.medium,
+                fontSize: moderateScale(15),
+                color: Colors.onSurface,
+              }}
+            >
+              {phraseCount} {phraseCount === 1 ? 'phrase' : 'phrases'} learned
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
             <Icons.mic size={18} color={Colors.primary} />
-            <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: moderateScale(15), color: Colors.onSurface }}>
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.medium,
+                fontSize: moderateScale(15),
+                color: Colors.onSurface,
+              }}
+            >
               You spoke Kannada today
             </Text>
           </View>
@@ -205,7 +230,7 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
             backgroundColor: Colors.secondaryFixed,
             borderRadius: Radius.xl,
             padding: Spacing.xxl,
-            marginBottom: Spacing.lg,
+            marginBottom: Spacing.xl,
           }}
         >
           <Text
@@ -228,7 +253,7 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
               lineHeight: moderateScale(26),
             }}
           >
-            {lesson.situation.realWorldPrompt}
+            {lesson.realWorldPrompt}
           </Text>
         </View>
 
@@ -240,6 +265,7 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
               paddingVertical: Spacing.md,
               paddingHorizontal: Spacing.lg,
               alignItems: 'center',
+              marginBottom: Spacing.xl,
             }}
           >
             <Text
@@ -252,6 +278,30 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
             >
               Nice. We'll check in tomorrow.
             </Text>
+          </View>
+        )}
+
+        {/* Keep practising — game modes */}
+        {games.length > 0 && (
+          <View>
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.bold,
+                fontSize: moderateScale(11),
+                letterSpacing: 2,
+                color: Colors.tertiary,
+                textTransform: 'uppercase',
+                marginBottom: Spacing.md,
+              }}
+              maxFontSizeMultiplier={1.4}
+            >
+              Keep practising
+            </Text>
+            <View style={{ gap: Spacing.sm }}>
+              {games.map((g) => (
+                <GameRow key={g.key} game={g} onPlay={() => router.push(`/(games)/${g.key}`)} />
+              ))}
+            </View>
           </View>
         )}
       </ScrollView>
@@ -284,7 +334,13 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
             {intentMarked && <Icons.correct size={16} color={Colors.onPrimary} />}
-            <Text style={{ fontFamily: Fonts.dmSans.medium, fontSize: moderateScale(15), color: Colors.onPrimary }}>
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.medium,
+                fontSize: moderateScale(15),
+                color: Colors.onPrimary,
+              }}
+            >
               {intentMarked ? 'Committed' : "I'll try this in real life"}
             </Text>
           </View>
@@ -330,6 +386,73 @@ export function DoneCard({ lesson, drillAttempts, onClose }: DoneCardProps) {
           </View>
         </Pressable>
       </View>
+    </View>
+  );
+}
+
+function GameRow({ game, onPlay }: { game: Game; onPlay: () => void }) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.md,
+        backgroundColor: Colors.surfaceContainerLow,
+        borderRadius: Radius.lg,
+        paddingVertical: Spacing.md,
+        paddingHorizontal: Spacing.lg,
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            fontFamily: Fonts.dmSans.bold,
+            fontSize: moderateScale(14),
+            color: Colors.onSurface,
+          }}
+          maxFontSizeMultiplier={1.3}
+        >
+          {game.title}
+        </Text>
+        <Text
+          style={{
+            fontFamily: Fonts.dmSans.regular,
+            fontSize: moderateScale(12),
+            color: Colors.tertiary,
+            marginTop: moderateScale(2),
+            lineHeight: moderateScale(16),
+          }}
+          maxFontSizeMultiplier={1.4}
+          numberOfLines={2}
+        >
+          {game.tagline}
+        </Text>
+      </View>
+      <Pressable
+        onPress={onPlay}
+        accessibilityRole="button"
+        accessibilityLabel={`Play ${game.title}`}
+        style={({ pressed }) => ({
+          backgroundColor: pressed ? Colors.primary : Colors.primaryContainer,
+          borderRadius: Radius.full,
+          paddingVertical: Spacing.sm,
+          paddingHorizontal: Spacing.lg,
+          minHeight: moderateScale(36),
+          justifyContent: 'center',
+        })}
+      >
+        <Text
+          style={{
+            fontFamily: Fonts.dmSans.bold,
+            fontSize: moderateScale(12),
+            letterSpacing: 0.5,
+            color: Colors.onPrimary,
+          }}
+          maxFontSizeMultiplier={1.2}
+        >
+          Play
+        </Text>
+      </Pressable>
     </View>
   );
 }

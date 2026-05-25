@@ -3,7 +3,7 @@ import { Audio } from 'expo-av';
 import type { AudioService, PlayOptions } from './AudioService';
 
 const DEFAULT_LANGUAGE = 'kn-IN';
-const DEFAULT_RATE = 0.9;
+const DEFAULT_RATE = 0.7;
 
 let currentRecording: Audio.Recording | null = null;
 let currentPlaybackSound: Audio.Sound | null = null;

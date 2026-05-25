@@ -8,7 +8,7 @@ import { Fonts } from '../../constants/fonts';
 import { Spacing, Radius } from '../../constants/spacing';
 import { Icons } from '../../constants/icons';
 import { useCompletedLessons, useStreak } from '../../hooks/progress';
-import { LESSONS, LESSON_ORDER } from '../../constants/lessons';
+import { useDbLessons } from '../../hooks/useLessons';
 import {
   PLANNED_LESSON_SLOTS,
   TOTAL_LESSON_SLOTS,
@@ -27,8 +27,9 @@ type LessonRow = {
   subtitle: string;
   char: string;
   phraseCount: number;
-  realLessonId?: string;
+  realLessonSlug?: string;
   prevTitle?: string;
+  prevSlug?: string;
 };
 
 export default function LearnScreen() {
@@ -37,6 +38,8 @@ export default function LearnScreen() {
   const completedLessons = useCompletedLessons();
   const streak = useStreak();
   const modal = useModal();
+  const lessonsQuery = useDbLessons();
+  const dbLessons = lessonsQuery.data ?? [];
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(4)).current;
@@ -50,10 +53,9 @@ export default function LearnScreen() {
 
   const completedCount = Math.min(completedLessons.length, TOTAL_LESSON_SLOTS);
 
-  // Build 8 rows. Real lessons fill the first N slots; rest are placeholders.
   const rows: LessonRow[] = PLANNED_LESSON_SLOTS.map((slot, idx) => {
-    const realId = LESSON_ORDER[idx];
-    const real = realId ? LESSONS[realId] : undefined;
+    const real = dbLessons.find((l) => l.lessonNo === slot.slot);
+    const prevReal = dbLessons.find((l) => l.lessonNo === slot.slot - 1);
     const n = idx + 1;
 
     let state: RowState;
@@ -64,23 +66,19 @@ export default function LearnScreen() {
     return {
       slot: n,
       state,
-      title: real?.situation.title ?? slot.title,
+      title: real?.title ?? slot.title,
       subtitle: slot.subtitle,
       char: slot.charPlaceholder,
-      phraseCount: real?.intake.length ?? 0,
-      realLessonId: realId,
-      prevTitle:
-        idx > 0
-          ? (LESSON_ORDER[idx - 1] && LESSONS[LESSON_ORDER[idx - 1]]?.situation.title) ||
-            PLANNED_LESSON_SLOTS[idx - 1].title
-          : undefined,
+      phraseCount: real?.phrases.length ?? 0,
+      realLessonSlug: real?.slug,
+      prevTitle: idx > 0 ? (prevReal?.title ?? PLANNED_LESSON_SLOTS[idx - 1].title) : undefined,
+      prevSlug: prevReal?.slug,
     };
   });
 
   const handleRowPress = (row: LessonRow) => {
     if (row.state === 'locked') {
       const prevSlot = row.slot - 1;
-      const prevRealId = LESSON_ORDER[prevSlot - 1];
       modal.show({
         kind: 'dialog',
         component: LessonLockedDialog,
@@ -91,7 +89,7 @@ export default function LearnScreen() {
           prevLessonTitle: row.prevTitle ?? `Lesson ${prevSlot}`,
           onGoToPrev: () => {
             modal.dismiss();
-            if (prevRealId) router.push(`/lesson/${prevRealId}`);
+            if (row.prevSlug) router.push(`/lesson/${row.prevSlug}`);
           },
           onDismiss: () => modal.dismiss(),
         },
@@ -99,10 +97,9 @@ export default function LearnScreen() {
       });
       return;
     }
-    if (row.realLessonId) {
-      router.push(`/lesson/${row.realLessonId}`);
+    if (row.realLessonSlug) {
+      router.push(`/lesson/${row.realLessonSlug}`);
     }
-    // No-op for unlocked-but-placeholder rows — content arrives with Spec 04.
   };
 
   return (
@@ -114,7 +111,6 @@ export default function LearnScreen() {
         transform: [{ translateY: slideAnim }],
       }}
     >
-      {/* APP BAR — centred wordmark, streak right (no hamburger) */}
       <View
         style={{
           paddingTop: insets.top + Spacing.sm,
@@ -168,8 +164,9 @@ export default function LearnScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: moderateScale(40) + insets.bottom }}
       >
-        {/* Section label + helper */}
-        <View style={{ paddingHorizontal: Spacing.xxl, paddingTop: Spacing.md, marginBottom: Spacing.xl }}>
+        <View
+          style={{ paddingHorizontal: Spacing.xxl, paddingTop: Spacing.md, marginBottom: Spacing.xl }}
+        >
           <Text
             style={{
               fontFamily: Fonts.dmSans.bold,
@@ -196,7 +193,6 @@ export default function LearnScreen() {
           </Text>
         </View>
 
-        {/* 8 lesson rows */}
         <View style={{ paddingHorizontal: Spacing.xxl, gap: moderateScale(10) }}>
           {rows.map((row) => (
             <LessonRowView
@@ -235,10 +231,6 @@ function LessonRowView({ row, onPress }: { row: LessonRow; onPress: () => void }
         padding: moderateScale(14),
         opacity: isLocked ? 0.5 : 1,
         transform: [{ scale: pressed && !isLocked ? 0.98 : 1 }],
-        // Active ghost-border glow via inset shadow (No-Line rule).
-        // RN can't render true inset shadows cross-platform without a lib —
-        // we emit a subtle outer shadow tinted with the ghost-border colour
-        // only on the active row.
         ...(isActive
           ? {
               shadowColor: Colors.outlineVariant,
@@ -250,7 +242,6 @@ function LessonRowView({ row, onPress }: { row: LessonRow; onPress: () => void }
           : {}),
       })}
     >
-      {/* Left tile — 46px, surface bg, Kannada char */}
       <View
         style={{
           width: moderateScale(46),
@@ -276,7 +267,6 @@ function LessonRowView({ row, onPress }: { row: LessonRow; onPress: () => void }
         </Text>
       </View>
 
-      {/* Middle — number/title + subtitle */}
       <View style={{ flex: 1 }}>
         <Text
           style={{
@@ -306,7 +296,6 @@ function LessonRowView({ row, onPress }: { row: LessonRow; onPress: () => void }
         </Text>
       </View>
 
-      {/* Right — check / Start pill / lock */}
       <View style={{ marginLeft: moderateScale(10) }}>
         {isDone && <Icons.lessonDone size={18} color={Colors.primary} />}
         {isActive && (

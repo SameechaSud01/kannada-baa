@@ -2,7 +2,7 @@
 doc: CONTENT
 status: reviewed
 owner: samee
-last-reviewed: 2026-05-19
+last-reviewed: 2026-05-23
 related:
   - SCOPE.md
   - DESIGN.md
@@ -124,7 +124,7 @@ All user-facing strings live in [copy.ts](../../constants/copy.ts). Accessed via
 
 ## Emergency content
 
-`[LOCKED]` — schema; content `[OPEN]` pending verification.
+`[LOCKED]` — schema; content `[OPEN]` pending verification. **Source-of-truth divergence:** Supabase has an `emergency_phrases` table that no app code reads — see [CONTRADICTIONS.md](CONTRADICTIONS.md) C10 for the JSON-vs-DB decision still owed.
 
 File: [data/emergency.json](../../data/emergency.json). Offline-first phrase guide, 3 groups (`auto`, `trouble`, `basics`), 3 items each.
 
