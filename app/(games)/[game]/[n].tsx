@@ -9,6 +9,7 @@ import { Icons } from '@/constants/icons';
 import { GAMES, isGameKey, type GameKey } from '@/constants/games';
 import OppositeGame from '@/src/games/opposites';
 import DictationGame from '@/src/games/dictation';
+import ImageMatchGame from '@/src/games/imagematch';
 
 export default function GameRunnerScreen() {
   const router = useRouter();
@@ -23,8 +24,9 @@ export default function GameRunnerScreen() {
       return <OppositeGame />;
     case 'dictation':
       return <DictationGame />;
-    case 'quiz':
     case 'image-match':
+      return <ImageMatchGame />;
+    case 'quiz':
     case 'conversations':
       return (
         <ComingSoon
