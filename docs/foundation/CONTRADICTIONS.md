@@ -62,21 +62,24 @@ Numbering is monotonic and never reused. Gaps in the sequence (C2, C4, C5, C8…
 
 **Resolution owed:** Edit [README.md](../../README.md) to drop NativeWind from the stack list (line 3) and from the "Styling" section (line 153), replacing with "inline styles + tokens in `constants/`". No CLAUDE.md edit needed beyond the new top-of-file session-start instruction.
 
-### C10 — `emergency_phrases` table exists in Supabase but app reads `data/emergency.json`
-
-**What's wrong:** [CONTENT.md](CONTENT.md#emergency-content) declares that emergency content lives in [data/emergency.json](../../data/emergency.json) (3 groups × 3 items, offline-first). The Supabase project ships an `emergency_phrases` table (columns: `id`, `category`, `kannada`, `meaning`, `audio_url`, `sort_order`) listed under "Scaffolded" in [STATE.md](STATE.md#scaffolded-exist-in-db-not-yet-read-or-written-by-app-code). No app code references `emergency_phrases` (verified grep across `app/`, `components/`, `hooks/`, `stores/`, `services/`), so the table is unused — but its existence signals intent to migrate that the JSON file does not reflect.
-
-**Why it matters:** A contributor seeing the table will reasonably assume it is the source of truth and either (a) start writing client reads against it, bypassing the offline-first JSON contract, or (b) keep the JSON in sync manually with no clear write path. Neither is what the spec says.
-
-**Owning specs:** [CONTENT.md](CONTENT.md#emergency-content) (canonical content shape), [STATE.md](STATE.md#scaffolded-exist-in-db-not-yet-read-or-written-by-app-code) (table inventory).
-
-**Resolution owed:** Owner picks one direction:
-- **JSON wins:** `emergency_phrases` is decommissioned (drop the table or document it as a holding pen). [CONTENT.md](CONTENT.md#emergency-content) stays canonical.
-- **DB wins:** A migration spec moves emergency content into `emergency_phrases`, the app gets a `services/api/emergency.ts` accessor + RLS, and [data/emergency.json](../../data/emergency.json) becomes a seed artifact (or is dropped). [CONTENT.md](CONTENT.md#emergency-content) updates to point at the table.
-
-Until decided, do not start writing against `emergency_phrases` from the client.
-
 ## Resolved
+
+### C10 — `emergency_phrases` table now read by app code ✅
+
+**What was wrong:** [CONTENT.md](CONTENT.md#emergency-content) declared that emergency content lived in [data/emergency.json](../../data/emergency.json), but the Supabase project shipped an unused `emergency_phrases` table. The DB-vs-JSON source-of-truth direction was unresolved.
+
+**Resolution:** [spec_db_wiring_games_and_overall_progress.md](../../spec_docs/Sameecha/spec_db_wiring_games_and_overall_progress.md) (PR1 + PR2) picked "DB wins":
+- PR1 added RLS to `emergency_phrases` and seeded the 9 rows from `data/emergency.json` ([2026-05-27_db_wiring_games_seed.sql](../../services/api/migrations/2026-05-27_db_wiring_games_seed.sql) Migration 6).
+- PR2 added [services/api/emergency.ts](../../services/api/emergency.ts) accessor and [hooks/useEmergencyPhrases.ts](../../hooks/useEmergencyPhrases.ts); refactored [app/emergency.tsx](../../app/emergency.tsx) to fetch from DB instead of importing the JSON. Also added a `transliteration` column ([2026-05-27b_emergency_transliteration.sql](../../services/api/migrations/2026-05-27b_emergency_transliteration.sql)) so the "Roman · English" subtext survived the migration.
+- [data/emergency.json](../../data/emergency.json) stays in repo as a seed artifact (no app imports verified by grep).
+
+**Verification (performed manually, not assumed):**
+- Manual test 2026-05-27: Emergency screen renders 3 groups × 3 phrases fetched from `emergency_phrases`; "Roman · English" line present.
+- `grep -rn "emergency.json" --include="*.ts" --include="*.tsx" app/ components/ hooks/ stores/ services/` returns zero hits in app code.
+
+**Owning specs:** [CONTENT.md](CONTENT.md#emergency-content) — to be updated next session to point at the DB table instead of the JSON file.
+
+**Status:** Closed 2026-05-27.
 
 ### C6 — Lesson-completion idempotency contract now pinned by tests ✅
 

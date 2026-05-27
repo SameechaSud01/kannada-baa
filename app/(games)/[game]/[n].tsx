@@ -13,15 +13,20 @@ import ImageMatchGame from '@/src/games/imagematch';
 
 export default function GameRunnerScreen() {
   const router = useRouter();
-  const { game: gameParam } = useLocalSearchParams<{ game: string; n: string }>();
+  const { game: gameParam, n: nParam } = useLocalSearchParams<{ game: string; n: string }>();
 
   if (!gameParam || !isGameKey(gameParam)) {
     return <NotFound onBack={() => router.replace('/practice')} />;
   }
 
+  const lessonNo = Number.parseInt(String(nParam ?? ''), 10);
+  if (!Number.isFinite(lessonNo) || lessonNo < 1 || lessonNo > 8) {
+    return <NotFound onBack={() => router.replace(`/${gameParam}`)} />;
+  }
+
   switch (gameParam as GameKey) {
     case 'opposites':
-      return <OppositeGame />;
+      return <OppositeGame lessonNo={lessonNo} />;
     case 'dictation':
       return <DictationGame />;
     case 'image-match':
