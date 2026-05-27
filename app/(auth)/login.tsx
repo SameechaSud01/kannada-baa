@@ -9,11 +9,29 @@ import { Toasts } from '../../components/modals/instances/toastCatalog';
 
 const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
+type Mode = 'login' | 'signup';
+
+const COPY: Record<Mode, { title: string; subtitle: string; cta: string }> = {
+  login: {
+    title: 'Welcome back',
+    subtitle: 'Log in to continue your Kannada journey.',
+    cta: 'LOG IN',
+  },
+  signup: {
+    title: 'Create your account',
+    subtitle: 'Sign up to start learning Kannada today.',
+    cta: 'SIGN UP',
+  },
+};
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [mode, setMode] = useState<Mode>('login');
   const [loading, setLoading] = useState(false);
+
+  const isSignUp = mode === 'signup';
+  const copy = COPY[mode];
 
   const handleAuth = async () => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -60,7 +78,7 @@ export default function LoginScreen() {
     >
       <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: Spacing.xxl }}>
         {/* Hero */}
-        <View style={{ alignItems: 'center', marginBottom: Spacing.xxxl * 2 }}>
+        <View style={{ alignItems: 'center', marginBottom: Spacing.xxxl }}>
           <Text
             style={{
               fontFamily: Fonts.notoSerifKannada.bold,
@@ -82,15 +100,50 @@ export default function LoginScreen() {
           >
             Kannada Baa
           </Text>
+        </View>
+
+        {/* Mode segmented toggle */}
+        <View
+          style={{
+            flexDirection: 'row',
+            backgroundColor: Colors.surfaceContainerHigh,
+            borderRadius: Radius.full,
+            padding: moderateScale(4),
+            marginBottom: Spacing.xl,
+          }}
+        >
+          <SegmentButton
+            label="Log in"
+            active={mode === 'login'}
+            onPress={() => setMode('login')}
+          />
+          <SegmentButton
+            label="Sign up"
+            active={mode === 'signup'}
+            onPress={() => setMode('signup')}
+          />
+        </View>
+
+        {/* Mode-specific heading */}
+        <View style={{ marginBottom: Spacing.xl }}>
+          <Text
+            style={{
+              fontFamily: Fonts.dmSans.bold,
+              fontSize: moderateScale(22),
+              color: Colors.onSurface,
+              marginBottom: Spacing.xs,
+            }}
+          >
+            {copy.title}
+          </Text>
           <Text
             style={{
               fontFamily: Fonts.dmSans.regular,
               fontSize: moderateScale(14),
               color: Colors.tertiary,
-              marginTop: Spacing.sm,
             }}
           >
-            Learn Kannada. Belong in Bengaluru.
+            {copy.subtitle}
           </Text>
         </View>
 
@@ -117,7 +170,7 @@ export default function LoginScreen() {
         />
 
         <TextInput
-          placeholder="Password"
+          placeholder={isSignUp ? 'Password (min 6 characters)' : 'Password'}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -157,26 +210,44 @@ export default function LoginScreen() {
               letterSpacing: 0.5,
             }}
           >
-            {loading ? 'Please wait...' : isSignUp ? 'SIGN UP' : 'LOG IN'}
-          </Text>
-        </Pressable>
-
-        {/* Toggle */}
-        <Pressable
-          onPress={() => setIsSignUp(!isSignUp)}
-          style={{ marginTop: Spacing.lg, alignItems: 'center' }}
-        >
-          <Text
-            style={{
-              fontFamily: Fonts.dmSans.regular,
-              fontSize: moderateScale(13),
-              color: Colors.tertiary,
-            }}
-          >
-            {isSignUp ? 'Already have an account? Log in' : "Don't have an account? Sign up"}
+            {loading ? 'Please wait...' : copy.cta}
           </Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>
+  );
+}
+
+type SegmentButtonProps = {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+};
+
+function SegmentButton({ label, active, onPress }: SegmentButtonProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      style={{
+        flex: 1,
+        backgroundColor: active ? Colors.primaryContainer : 'transparent',
+        borderRadius: Radius.full,
+        paddingVertical: Spacing.sm + moderateScale(2),
+        alignItems: 'center',
+      }}
+    >
+      <Text
+        style={{
+          fontFamily: active ? Fonts.dmSans.bold : Fonts.dmSans.regular,
+          fontSize: moderateScale(14),
+          color: active ? Colors.onPrimary : Colors.tertiary,
+          letterSpacing: 0.3,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }

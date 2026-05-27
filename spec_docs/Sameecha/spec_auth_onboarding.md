@@ -50,9 +50,15 @@ confirmation is required.
    `commitment.tsx` writes to the DB first; only on success does it set the
    local flag and navigate. On failure, stay on the screen, show a toast, do
    not corrupt local state.
-4. **Sign-out clears device-scoped state.** After `supabase.auth.signOut()`,
-   reset `useUserStore` and `useProgressStore` to defaults. Prevents
-   cross-account state leak on shared devices.
+4. **Cross-account state leak is prevented on user *bind*, not on signOut.**
+   `useAuthStore.signOut()` preserves persisted user + progress state. The
+   `AppGate` bind effect calls `resetForUser(newId)` whenever
+   `storedUserId !== currentUserId`, which is the actual cross-account
+   guard. Wiping state on signOut breaks same-user re-login: the routing
+   effect briefly reads `hasCompletedOnboarding=false` and bounces the
+   user through `/onboarding/welcome` before the DB sync resolves.
+   *(Original spec called for a signOut reset; that caused the flicker
+   bug. The bind-effect reset covers the same intent without the race.)*
 5. **No new state libraries, no new auth providers, no email-confirmation
    work in this spec.** Stay inside the existing Zustand + Supabase stack.
 
@@ -207,9 +213,11 @@ No changes needed.
 ### `stores/useAuthStore.ts`
 - Add an async `signOut()` action that:
   1. `await supabase.auth.signOut()`
-  2. `useUserStore.getState().reset()`
-  3. `useProgressStore.getState().reset()`
-  4. `set({ session: null, user: null })`
+  2. `resetLessonsCache()` (in-memory only)
+  3. `set({ session: null, user: null })`
+- Do **not** call `useUserStore.reset()` / `useProgressStore.reset()` here —
+  the AppGate bind effect's `resetForUser` handles cross-account wipe when
+  a different user binds next. See rule 4 above.
 - Existing `setSession` / `setLoading` are unchanged.
 
 ### `app/(tabs)/profile.tsx`
@@ -291,9 +299,13 @@ No changes needed.
       a session sync having happened since boot.
 - [ ] `login.tsx` no longer shows "check your email" when a session is
       returned.
-- [ ] `profile.tsx` signOut clears `useUserStore` and `useProgressStore`
-      (verified by signing out, then signing in as a different account and
-      seeing fresh state).
+- [ ] After signing out and signing back in as the **same** user, the app
+      routes straight to `/(tabs)` with no flash of `/onboarding/welcome`
+      (persisted state survives signOut; bind effect no-ops since
+      `storedUserId === currentUserId`).
+- [ ] After signing out and signing in as a **different** user on the same
+      device, that user sees fresh state (bind effect's `resetForUser`
+      fires because `storedUserId !== currentUserId`).
 
 ## Manual test plan
 1. **Migrations applied.** Run all four SQL blocks in Supabase. Confirm

@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../services/api/supabase';
-import { useUserStore } from './useUserStore';
-import { useProgressStore } from './progressStore';
 import { resetLessonsCache } from '../services/api/lessons';
 
 interface AuthState {
@@ -29,8 +27,12 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
   signOut: async () => {
     await supabase.auth.signOut();
-    useUserStore.getState().reset();
-    useProgressStore.getState().reset();
+    // Preserve persisted user + progress state across signOut. AppGate's bind
+    // effect calls resetForUser() when a different user signs in next, which
+    // covers the cross-account leak case. Wiping state here breaks same-user
+    // re-login: the routing effect briefly sees hasCompletedOnboarding=false
+    // and bounces the user through /onboarding/welcome before the DB sync
+    // resolves.
     resetLessonsCache();
     set({ session: null, user: null });
   },
