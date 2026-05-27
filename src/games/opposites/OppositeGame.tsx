@@ -1,10 +1,12 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { moderateScale } from 'react-native-size-matters';
+import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { Spacing, Radius } from '@/constants/spacing';
 import { Fonts } from '@/constants/fonts';
+import { useOppositesItems, useRecordOppositesAttempt } from '../../../hooks/games/opposites';
 import { useGameState } from './hooks/useGameState';
 import ProgressBar from './components/ProgressBar';
 import QuestionCard from './components/QuestionCard';
@@ -12,8 +14,45 @@ import OptionGrid from './components/OptionGrid';
 import FeedbackBanner from './components/FeedbackBanner';
 import ResultScreen from './components/ResultScreen';
 import { ExitBackButton } from '@/components/ui/ExitBackButton';
+import type { QuestionPair } from './types';
+import type { OppositesItem } from '../../../services/api/games/opposites';
 
-const OppositeGame: React.FC = () => {
+type Props = { lessonNo: number };
+
+function toPair(item: OppositesItem): QuestionPair {
+  return {
+    id: item.id,
+    word: item.word,
+    tr: item.transliteration ?? '',
+    meaning: item.meaning ?? '',
+    answer: item.opposite,
+    opts: item.options,
+  };
+}
+
+const OppositeGame: React.FC<Props> = ({ lessonNo }) => {
+  const { data: items, isLoading, isError, refetch } = useOppositesItems(lessonNo);
+
+  const pairs = useMemo<QuestionPair[]>(
+    () => (items ?? []).map(toPair),
+    [items],
+  );
+
+  if (isLoading) {
+    return <CenteredLoading />;
+  }
+  if (isError) {
+    return <ErrorState onRetry={() => refetch()} />;
+  }
+  if (pairs.length === 0) {
+    return <EmptyState lessonNo={lessonNo} />;
+  }
+  return <OppositeGameInner pairs={pairs} />;
+};
+
+function OppositeGameInner({ pairs }: { pairs: QuestionPair[] }) {
+  const recordAttempt = useRecordOppositesAttempt();
+
   const {
     currentQuestion,
     shuffledOpts,
@@ -29,7 +68,14 @@ const OppositeGame: React.FC = () => {
     handleNext,
     useHint,
     restart,
-  } = useGameState();
+  } = useGameState(pairs, ({ itemId, isCorrect }) => {
+    // Fire-and-forget. Server preserves personal-best on conflict; transient
+    // failures shouldn't disrupt play.
+    recordAttempt.mutate(
+      { itemId, isCorrect },
+      { onError: (err) => console.warn('[opposites] record attempt failed', err) },
+    );
+  });
 
   if (phase === 'result') {
     return (
@@ -125,6 +171,140 @@ const OppositeGame: React.FC = () => {
       </ScrollView>
     </SafeAreaView>
   );
-};
+}
+
+function CenteredLoading() {
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }} edges={['top', 'bottom']}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function ErrorState({ onRetry }: { onRetry: () => void }) {
+  const router = useRouter();
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }} edges={['top', 'bottom']}>
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: Spacing.xxl,
+          gap: Spacing.md,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: Fonts.dmSans.bold,
+            fontSize: moderateScale(18),
+            color: Colors.onSurface,
+            textAlign: 'center',
+          }}
+        >
+          Couldn&apos;t load this round
+        </Text>
+        <Text
+          style={{
+            fontFamily: Fonts.dmSans.regular,
+            fontSize: moderateScale(14),
+            color: Colors.tertiary,
+            textAlign: 'center',
+            marginBottom: Spacing.md,
+          }}
+        >
+          Check your connection and try again.
+        </Text>
+        <Pressable
+          onPress={onRetry}
+          accessibilityRole="button"
+          accessibilityLabel="Retry"
+          style={({ pressed }) => ({
+            backgroundColor: Colors.primary,
+            borderRadius: Radius.lg,
+            paddingVertical: Spacing.md,
+            paddingHorizontal: Spacing.xl,
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+          })}
+        >
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(14), color: Colors.onPrimary }}>
+            Retry
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={({ pressed }) => ({
+            paddingVertical: Spacing.sm,
+            opacity: pressed ? 0.6 : 1,
+          })}
+        >
+          <Text style={{ fontFamily: Fonts.dmSans.regular, fontSize: moderateScale(13), color: Colors.tertiary }}>
+            Back
+          </Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function EmptyState({ lessonNo }: { lessonNo: number }) {
+  const router = useRouter();
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }} edges={['top', 'bottom']}>
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: Spacing.xxl,
+          gap: Spacing.md,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: Fonts.dmSans.bold,
+            fontSize: moderateScale(18),
+            color: Colors.onSurface,
+            textAlign: 'center',
+          }}
+        >
+          Lesson {lessonNo} — coming soon
+        </Text>
+        <Text
+          style={{
+            fontFamily: Fonts.dmSans.regular,
+            fontSize: moderateScale(14),
+            color: Colors.tertiary,
+            textAlign: 'center',
+            lineHeight: moderateScale(20),
+            marginBottom: Spacing.md,
+          }}
+        >
+          No opposites items have been authored for this lesson yet. Try an earlier lesson.
+        </Text>
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Back to lessons"
+          style={({ pressed }) => ({
+            backgroundColor: Colors.primary,
+            borderRadius: Radius.lg,
+            paddingVertical: Spacing.md,
+            paddingHorizontal: Spacing.xl,
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+          })}
+        >
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(14), color: Colors.onPrimary }}>
+            Back to lessons
+          </Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
 
 export default OppositeGame;

@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { moderateScale } from 'react-native-size-matters';
+import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/colors';
 import { Fonts } from '../../../constants/fonts';
 import { Radius, Spacing } from '../../../constants/spacing';
+import { useDictationItems, useRecordDictationAttempt } from '../../../hooks/games/dictation';
 import { useDictationGame } from './hooks/useDictationGame';
 import ProgressBar from './components/ProgressBar';
 import AudioButton from './components/AudioButton';
@@ -11,8 +14,34 @@ import AnswerInput from './components/AnswerInput';
 import FeedbackCard from './components/FeedbackCard';
 import ResultScreen from './components/ResultScreen';
 import { ExitBackButton } from '../../../components/ui/ExitBackButton';
+import type { DictationWord } from './types';
+import type { DictationItem } from '../../../services/api/games/dictation';
 
-export default function DictationGame() {
+type Props = { lessonNo: number };
+
+function toWord(item: DictationItem): DictationWord {
+  return {
+    id: item.id,
+    kn: item.expectedAnswer,
+    accepted: item.acceptedSpellings,
+    phonetic: item.phonetic ?? '',
+  };
+}
+
+export default function DictationGame({ lessonNo }: Props) {
+  const { data: items, isLoading, isError, refetch } = useDictationItems(lessonNo);
+
+  const bank = useMemo<DictationWord[]>(() => (items ?? []).map(toWord), [items]);
+
+  if (isLoading) return <CenteredLoading />;
+  if (isError) return <ErrorState onRetry={() => refetch()} />;
+  if (bank.length === 0) return <EmptyState lessonNo={lessonNo} />;
+  return <DictationGameInner bank={bank} />;
+}
+
+function DictationGameInner({ bank }: { bank: DictationWord[] }) {
+  const recordAttempt = useRecordDictationAttempt();
+
   const {
     currentWord,
     currentIndex,
@@ -28,7 +57,12 @@ export default function DictationGame() {
     nextWord,
     skipWord,
     restart,
-  } = useDictationGame();
+  } = useDictationGame(bank, ({ itemId, isCorrect }) => {
+    recordAttempt.mutate(
+      { itemId, isCorrect },
+      { onError: (err) => console.warn('[dictation] record attempt failed', err) },
+    );
+  });
 
   const [inputText, setInputText] = useState('');
 
@@ -159,6 +193,79 @@ export default function DictationGame() {
         )}
 
       </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function CenteredLoading() {
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }} edges={['top', 'bottom']}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function ErrorState({ onRetry }: { onRetry: () => void }) {
+  const router = useRouter();
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }} edges={['top', 'bottom']}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xxl, gap: Spacing.md }}>
+        <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(18), color: Colors.onSurface, textAlign: 'center' }}>
+          Couldn&apos;t load this round
+        </Text>
+        <Text style={{ fontFamily: Fonts.dmSans.regular, fontSize: moderateScale(14), color: Colors.tertiary, textAlign: 'center', marginBottom: Spacing.md }}>
+          Check your connection and try again.
+        </Text>
+        <Pressable
+          onPress={onRetry}
+          accessibilityRole="button"
+          accessibilityLabel="Retry"
+          style={({ pressed }) => ({
+            backgroundColor: Colors.primary,
+            borderRadius: Radius.lg,
+            paddingVertical: Spacing.md,
+            paddingHorizontal: Spacing.xl,
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+          })}
+        >
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(14), color: Colors.onPrimary }}>Retry</Text>
+        </Pressable>
+        <Pressable onPress={() => router.back()} style={({ pressed }) => ({ paddingVertical: Spacing.sm, opacity: pressed ? 0.6 : 1 })}>
+          <Text style={{ fontFamily: Fonts.dmSans.regular, fontSize: moderateScale(13), color: Colors.tertiary }}>Back</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function EmptyState({ lessonNo }: { lessonNo: number }) {
+  const router = useRouter();
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }} edges={['top', 'bottom']}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xxl, gap: Spacing.md }}>
+        <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(18), color: Colors.onSurface, textAlign: 'center' }}>
+          Lesson {lessonNo} — coming soon
+        </Text>
+        <Text style={{ fontFamily: Fonts.dmSans.regular, fontSize: moderateScale(14), color: Colors.tertiary, textAlign: 'center', lineHeight: moderateScale(20), marginBottom: Spacing.md }}>
+          No dictation words have been authored for this lesson yet. Try an earlier lesson.
+        </Text>
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Back to lessons"
+          style={({ pressed }) => ({
+            backgroundColor: Colors.primary,
+            borderRadius: Radius.lg,
+            paddingVertical: Spacing.md,
+            paddingHorizontal: Spacing.xl,
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+          })}
+        >
+          <Text style={{ fontFamily: Fonts.dmSans.bold, fontSize: moderateScale(14), color: Colors.onPrimary }}>Back to lessons</Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }

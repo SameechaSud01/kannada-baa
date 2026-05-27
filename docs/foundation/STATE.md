@@ -130,7 +130,7 @@ Client: [services/api/supabase.ts](../../services/api/supabase.ts). Singleton; r
 
 ### Tables
 
-`[LOCKED]` — schema reflects the live Supabase project as of 2026-05-23. Use this as the canonical list; do not propose tables that contradict what is here without an explicit migration.
+`[LOCKED]` — schema reflects the live Supabase project as of 2026-05-27. Use this as the canonical list; do not propose tables that contradict what is here without an explicit migration.
 
 #### Active (read or written by app code today)
 
@@ -139,18 +139,18 @@ Client: [services/api/supabase.ts](../../services/api/supabase.ts). Singleton; r
 | `users` | Persist auth identity + onboarding answers | `id` (PK, FK `auth.users`), `email` (unique), `name`, `avatar_url`, `learning_mode` (`'spoken'\|'written'\|'both'`), `motivations` (`text[]`), `daily_goal_minutes` (`5\|10\|20`), `current_streak`, `onboarding_completed_at`, `created_at` | [services/api/users.ts](../../services/api/users.ts) (see [spec_auth_onboarding.md](../../spec_docs/Sameecha/spec_auth_onboarding.md)) |
 | `lessons` | Per-lesson row; FK anchor for completions | `id` (uuid PK), `lesson_no` (int unique, used for ordering), `title`, `slug` (text unique-where-not-null — bridge to `constants/lessons/*.ts` string IDs), `situation`, `real_world_prompt`, `content_json` (jsonb reference snapshot — see [spec_lesson_content_source.md](../../spec_docs/Sameecha/spec_lesson_content_source.md)), `audio_url` (nullable), `created_at` | [services/api/lessons.ts](../../services/api/lessons.ts) |
 | `user_lesson_progress` | "Did I finish lesson X?" + best score | `user_id` + `lesson_id` (composite PK), `completed_at` (nullable), `score` (nullable int, 0–100 check, personal-best semantic via `record_lesson_completion` RPC) | [services/api/progress.ts](../../services/api/progress.ts) (see [spec_progress_persistence.md](../../spec_docs/Sameecha/spec_progress_persistence.md)) |
+| `opposites_items` / `opposites_progress` | Server backing for the Opposites game. items seeded from former [wordPairs.ts](../../src/games/opposites/data/wordPairs.ts) + lesson vocab. progress is per-item personal-best via `record_opposites_attempt` RPC. | items: `id` (PK), `lesson_id`, `sort_order`, `word`, `opposite`, `options_json`, `transliteration`, `meaning` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` | [services/api/games/opposites.ts](../../services/api/games/opposites.ts) (see [spec_db_wiring_games_and_overall_progress.md](../../spec_docs/Sameecha/spec_db_wiring_games_and_overall_progress.md)) |
+| `dictation_items` / `dictation_progress` | Server backing for the Dictation game. Per-item personal-best via `record_dictation_attempt` RPC. | items: `id` (PK), `lesson_id`, `sort_order`, `audio_url` (nullable), `expected_answer`, `accepted_json`, `phonetic` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` | [services/api/games/dictation.ts](../../services/api/games/dictation.ts) |
+| `image_match_items` / `image_match_progress` | Server backing for the Image Match game. Per-item personal-best via `record_image_match_attempt` RPC. Runner samples distractors from the lesson + 2 neighbors for sparse lessons. | items: `id` (PK), `lesson_id`, `sort_order`, `image_url` (nullable), `kannada`, `transliteration`, `meaning`, `emoji` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` | [services/api/games/imageMatch.ts](../../services/api/games/imageMatch.ts) |
+| `emergency_phrases` | Server-backed emergency content (replaces [data/emergency.json](../../data/emergency.json), resolves C10) | `id` (PK), `category`, `kannada`, `transliteration`, `meaning`, `audio_url` (nullable), `sort_order` | [services/api/emergency.ts](../../services/api/emergency.ts) |
+| `user_overall_progress` | Aggregated user metrics. Recomputed server-side via the `recompute_overall_progress` trigger function (formula: 50% lessons + 50% games split 3 ways; subgame complete = ≥80% items correct lifetime). Client reads via `useOverallProgress()`; the Profile screen surfaces `progress_pct`. | `user_id` (PK), `total_score`, `progress_pct`, `recomputed_at` | [services/api/overall.ts](../../services/api/overall.ts) |
 
 #### Scaffolded (exist in DB; not yet read or written by app code)
 
 | Table | Intended purpose | Key columns |
 |---|---|---|
-| `user_overall_progress` | Aggregated user metrics (looks materialized — has `recomputed_at`) | `user_id` (PK), `total_score`, `progress_pct`, `recomputed_at` |
-| `emergency_phrases` | Server-backed emergency content (today the app reads [data/emergency.json](../../data/emergency.json) — see [CONTRADICTIONS.md](CONTRADICTIONS.md) C10) | `id` (PK), `category`, `kannada`, `meaning`, `audio_url` (nullable), `sort_order` |
 | `word_of_the_day` | Daily featured word (no consuming feature yet) | `for_date` (date PK), `kannada`, `meaning`, `audio_url` (nullable) |
 | `conversation_items` / `conversation_progress` | Per-item state for the planned Conversations game ([CONTENT.md](CONTENT.md#planned-games-not-yet-implemented)) | items: `id` (PK), `lesson_id`, `scenario`, `turns_json` · progress: `user_id` + `item_id` (PK), `completed`, `attempts`, `last_played` |
-| `dictation_items` / `dictation_progress` | Server backing for the existing Dictation game (today reads completed-lesson phrases from TS — see [CONTENT.md](CONTENT.md#dictation--srcgamesdictation)) | items: `id` (PK), `lesson_id`, `audio_url`, `expected_answer` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` |
-| `image_match_items` / `image_match_progress` | Per-item state for the planned Image Match game | items: `id` (PK), `lesson_id`, `image_url`, `kannada`, `meaning` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` |
-| `opposites_items` / `opposites_progress` | Server backing for the existing Opposites game (today reads [wordPairs.ts](../../src/games/opposites/wordPairs.ts)) | items: `id` (PK), `lesson_id`, `word`, `opposite` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` |
 | `quick_quiz_items` / `quick_quiz_progress` | Per-item state for the planned Quick Quiz game | items: `id` (PK), `lesson_id`, `question`, `options_json`, `correct_index` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` |
 
 > **Note:** Wiring any scaffolded table requires its own spec — do not start reads/writes from a chat prompt. Each per-game table pair will need: a single accessor file under `services/api/`, an RLS pass mirroring the `ulp_*_own` pattern below, and a query/mutation key registered in the tables further down this doc.
@@ -165,19 +165,33 @@ Client: [services/api/supabase.ts](../../services/api/supabase.ts). Singleton; r
 | `lessons` | `select` for any authenticated user; no client writes | [2026-05-20_progress_persistence.sql](../../services/api/migrations/2026-05-20_progress_persistence.sql) |
 | `user_lesson_progress` | `select`/`insert`/`update` own (`auth.uid() = user_id`); no delete. Writes go through the `record_lesson_completion` SECURITY INVOKER RPC for personal-best UPSERT semantic | [2026-05-20_progress_persistence.sql](../../services/api/migrations/2026-05-20_progress_persistence.sql) |
 
-> **TODO (scaffolded tables):** before the first client read/write of any per-game table, enable RLS with the default rule `auth.uid() = user_id` on `*_progress` and `select` for `authenticated` on `*_items`. `emergency_phrases` and `word_of_the_day` are public read-only — same `select` for `authenticated` pattern.
+### RLS policies — per-game and emergency tables (added 2026-05-27)
+
+| Table | Policy | Source |
+|---|---|---|
+| `opposites_items` / `dictation_items` / `image_match_items` | `select` for any authenticated user; no client writes (seed-only) | [2026-05-27_db_wiring_games_and_overall.sql](../../services/api/migrations/2026-05-27_db_wiring_games_and_overall.sql) |
+| `opposites_progress` / `dictation_progress` / `image_match_progress` | `select`/`insert`/`update` own (`auth.uid() = user_id`); no delete. Writes go through `record_<game>_attempt` SECURITY INVOKER RPCs for personal-best UPSERT semantic. | [2026-05-27_db_wiring_games_and_overall.sql](../../services/api/migrations/2026-05-27_db_wiring_games_and_overall.sql) |
+| `emergency_phrases` | `select` for any authenticated user; no client writes | [2026-05-27_db_wiring_games_and_overall.sql](../../services/api/migrations/2026-05-27_db_wiring_games_and_overall.sql) |
+| `user_overall_progress` | `select` own (`auth.uid() = user_id`); no client writes (trigger-managed via `recompute_overall_progress` SECURITY DEFINER function) | [2026-05-27_db_wiring_games_and_overall.sql](../../services/api/migrations/2026-05-27_db_wiring_games_and_overall.sql) |
+
+> **TODO (still-scaffolded tables):** before the first client read/write of `word_of_the_day`, `conversation_items/progress`, or `quick_quiz_items/progress`, apply the same RLS pattern. PR3 wires `dictation_*` and `image_match_*` reads/writes (substrate is already in place from PR1).
 
 ## TanStack Query
 
-`QueryClient` initialised in [app/_layout.tsx](../../app/_layout.tsx) with defaults. One read query (`['lesson-completions', userId]`) and one mutation (`['completeLesson']`) are live (see [spec_progress_persistence.md](../../spec_docs/Sameecha/spec_progress_persistence.md)). Lesson reference data (`public.lessons` rows) is fetched ad-hoc through [services/api/lessons.ts](../../services/api/lessons.ts) without a Query wrapper today.
+`QueryClient` initialised in [app/_layout.tsx](../../app/_layout.tsx) with defaults. Lesson reference data (`public.lessons` rows) is fetched ad-hoc through [services/api/lessons.ts](../../services/api/lessons.ts) without a Query wrapper today.
 
 ### Query key conventions
 
-`[LOCKED]` — first conventions landed with [spec_progress_persistence.md](../../spec_docs/Sameecha/spec_progress_persistence.md). Future query keys follow the same `[<resource>, userId, …]` shape.
+`[LOCKED]` — first conventions landed with [spec_progress_persistence.md](../../spec_docs/Sameecha/spec_progress_persistence.md). Future query keys follow the same `[<resource>, …scoping]` shape (userId when the data is user-scoped, lesson scope otherwise).
 
 | Key | Reads | Source |
 |---|---|---|
 | `['lesson-completions', userId]` | Server list of completed lessons (slug + score + completed_at) | [services/api/progress.ts](../../services/api/progress.ts) `fetchCompletedLessons` |
+| `['opposites-items', lessonNo]` | Opposites items for one lesson, ordered by sort_order | [services/api/games/opposites.ts](../../services/api/games/opposites.ts) `fetchOppositesItemsByLessonNo` (see [spec_db_wiring_games_and_overall_progress.md](../../spec_docs/Sameecha/spec_db_wiring_games_and_overall_progress.md)) |
+| `['dictation-items', lessonNo]` | Dictation items for one lesson | [services/api/games/dictation.ts](../../services/api/games/dictation.ts) `fetchDictationItemsByLessonNo` |
+| `['image-match-items', lessonNo]` | Image Match items for one lesson | [services/api/games/imageMatch.ts](../../services/api/games/imageMatch.ts) `fetchImageMatchItemsByLessonNo` |
+| `['overall-progress', userId]` | User's `user_overall_progress` row | [services/api/overall.ts](../../services/api/overall.ts) `fetchOverallProgress` |
+| `['emergency-phrases']` | Grouped emergency phrases (auto / trouble / basics) | [services/api/emergency.ts](../../services/api/emergency.ts) `fetchEmergencyPhrases` |
 
 ### Mutation conventions
 
@@ -185,7 +199,10 @@ Client: [services/api/supabase.ts](../../services/api/supabase.ts). Singleton; r
 
 | Mutation key | Hook | Invalidates |
 |---|---|---|
-| `['completeLesson']` | [hooks/useCompleteLessonMutation.ts](../../hooks/useCompleteLessonMutation.ts) | `['lesson-completions', userId]` |
+| `['completeLesson']` | [hooks/useCompleteLessonMutation.ts](../../hooks/useCompleteLessonMutation.ts) | `['lesson-completions', userId]`, `['overall-progress', userId]` |
+| `['recordOppositesAttempt']` | [hooks/games/opposites.ts](../../hooks/games/opposites.ts) `useRecordOppositesAttempt` | `['overall-progress', userId]` |
+| `['recordDictationAttempt']` | [hooks/games/dictation.ts](../../hooks/games/dictation.ts) `useRecordDictationAttempt` | `['overall-progress', userId]` |
+| `['recordImageMatchAttempt']` | [hooks/games/imageMatch.ts](../../hooks/games/imageMatch.ts) `useRecordImageMatchAttempt` | `['overall-progress', userId]` |
 
 ## Cross-store sync rules
 

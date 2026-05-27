@@ -1,6 +1,12 @@
-import { useState, useCallback, useRef } from 'react';
-import { RAW_PAIRS } from '../data/wordPairs';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import type { QuestionPair, Option, AnswerState, GamePhase } from '../types';
+
+/**
+ * Per-item attempt callback. Fired once per option tap (correct or wrong).
+ * The OppositeGame component owns the actual recording side-effect; this
+ * hook stays pure for testability.
+ */
+type AttemptCallback = (args: { itemId: string; isCorrect: boolean }) => void;
 
 type Session = {
   questions: QuestionPair[];
@@ -33,15 +39,23 @@ function fisherYates<T>(arr: T[]): T[] {
   return a;
 }
 
-function buildSession(): Session {
-  const questions = fisherYates([...RAW_PAIRS]);
+function buildSession(items: QuestionPair[]): Session {
+  const questions = fisherYates([...items]);
   const shuffledOptsPerQ = questions.map((q) => fisherYates([...q.opts]));
   return { questions, shuffledOptsPerQ };
 }
 
-export function useGameState(): UseGameStateReturn {
-  // Session in state so restart() always triggers a re-render (even from initial state)
-  const [session, setSession] = useState<Session>(buildSession);
+export function useGameState(
+  items: QuestionPair[],
+  onAttempt?: AttemptCallback,
+): UseGameStateReturn {
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
+  const onAttemptRef = useRef(onAttempt);
+  onAttemptRef.current = onAttempt;
+
+  const [session, setSession] = useState<Session>(() => buildSession(items));
   const sessionRef = useRef(session);
   sessionRef.current = session;
 
@@ -62,14 +76,21 @@ export function useGameState(): UseGameStateReturn {
     (kn: string) => {
       if (answerState !== 'unanswered') return;
       const { questions } = sessionRef.current;
+      const current = questions[currentIndex];
+      const isCorrect = kn === current.answer;
+
       setSelectedOpt(kn);
-      if (kn === questions[currentIndex].answer) {
+      if (isCorrect) {
         setAnswerState('correct');
         setScore((s) => s + (hintUsed ? 0.5 : 1));
         setStreak((s) => s + 1);
       } else {
         setAnswerState('wrong');
         setStreak(0);
+      }
+
+      if (current.id) {
+        onAttemptRef.current?.({ itemId: current.id, isCorrect });
       }
     },
     [answerState, currentIndex, hintUsed],
@@ -89,7 +110,7 @@ export function useGameState(): UseGameStateReturn {
   }, [answerState, currentIndex]);
 
   const restart = useCallback(() => {
-    setSession(buildSession());
+    setSession(buildSession(itemsRef.current));
     setCurrentIndex(0);
     setScore(0);
     setStreak(0);
@@ -99,20 +120,36 @@ export function useGameState(): UseGameStateReturn {
     setHintUsed(false);
   }, []);
 
-  return {
-    currentQuestion: session.questions[currentIndex],
-    shuffledOpts: session.shuffledOptsPerQ[currentIndex],
-    currentIndex,
-    totalQuestions: session.questions.length,
-    score,
-    streak,
-    phase,
-    answerState,
-    selectedOpt,
-    hintUsed,
-    handleOptionTap,
-    handleNext,
-    useHint,
-    restart,
-  };
+  return useMemo(
+    () => ({
+      currentQuestion: session.questions[currentIndex],
+      shuffledOpts: session.shuffledOptsPerQ[currentIndex],
+      currentIndex,
+      totalQuestions: session.questions.length,
+      score,
+      streak,
+      phase,
+      answerState,
+      selectedOpt,
+      hintUsed,
+      handleOptionTap,
+      handleNext,
+      useHint,
+      restart,
+    }),
+    [
+      session,
+      currentIndex,
+      score,
+      streak,
+      phase,
+      answerState,
+      selectedOpt,
+      hintUsed,
+      handleOptionTap,
+      handleNext,
+      useHint,
+      restart,
+    ],
+  );
 }

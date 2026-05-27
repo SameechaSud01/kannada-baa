@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
-import { WORD_BANK } from '../data/wordBank';
+import { useState, useCallback, useRef } from 'react';
 import { scoreAnswer, classifyScore } from '../utils/fuzzyScore';
 import { playWord, stopPlayback } from '../utils/audioPlayer';
 import type { DictationWord, AnswerState, GamePhase } from '../types';
+
+type AttemptCallback = (args: { itemId: string; isCorrect: boolean }) => void;
 
 type UseDictationGameReturn = {
   currentWord: DictationWord;
@@ -30,8 +31,17 @@ function shuffle<T>(arr: T[]): T[] {
   return out;
 }
 
-export function useDictationGame(): UseDictationGameReturn {
-  const [words, setWords] = useState<DictationWord[]>(() => shuffle(WORD_BANK));
+export function useDictationGame(
+  bank: DictationWord[],
+  onAttempt?: AttemptCallback,
+): UseDictationGameReturn {
+  const bankRef = useRef(bank);
+  bankRef.current = bank;
+
+  const onAttemptRef = useRef(onAttempt);
+  onAttemptRef.current = onAttempt;
+
+  const [words, setWords] = useState<DictationWord[]>(() => shuffle(bank));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState<GamePhase>('playing');
   const [answerState, setAnswerState] = useState<AnswerState>('unanswered');
@@ -63,8 +73,14 @@ export function useDictationGame(): UseDictationGameReturn {
       setLastScore(score);
       setSessionAvg((avg) => Math.round((avg * answeredCount + score) / (answeredCount + 1)));
       setAnsweredCount((c) => c + 1);
+
+      // Personal-best uses strict "correct" only. A "partial" doesn't lock
+      // is_correct=true on the server (mirrors lesson scoring semantic).
+      if (currentWord.id) {
+        onAttemptRef.current?.({ itemId: currentWord.id, isCorrect: state === 'correct' });
+      }
     },
-    [answerState, currentWord, answeredCount]
+    [answerState, currentWord, answeredCount],
   );
 
   const nextWord = useCallback(() => {
@@ -93,7 +109,7 @@ export function useDictationGame(): UseDictationGameReturn {
 
   const restart = useCallback(() => {
     stopPlayback();
-    setWords(shuffle(WORD_BANK));
+    setWords(shuffle(bankRef.current));
     setCurrentIndex(0);
     setPhase('playing');
     setAnswerState('unanswered');

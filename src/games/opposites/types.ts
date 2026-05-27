@@ -5,6 +5,8 @@ export type Option = {
 };
 
 export type QuestionPair = {
+  /** opposites_items.id when DB-sourced. Drives per-item attempt recording. */
+  id?: string;
   word: string;
   tr: string;
   meaning: string;

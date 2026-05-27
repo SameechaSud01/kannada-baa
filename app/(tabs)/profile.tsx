@@ -10,6 +10,7 @@ import type { Icon as TablerIcon } from '@tabler/icons-react-native';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useUserStore } from '../../stores/useUserStore';
 import { useStreak, useWordsLearned } from '../../hooks/progress';
+import { useOverallProgress } from '../../hooks/useOverallProgress';
 import { formatFirstName } from '../../utils/formatName';
 import { useModal } from '../../components/modals/ModalHost';
 import { Toasts } from '../../components/modals/instances/toastCatalog';
@@ -32,6 +33,8 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const streak = useStreak();
   const wordsLearned = useWordsLearned();
+  const overall = useOverallProgress();
+  const overallPct = Math.max(0, Math.min(100, Math.round(overall.data?.progressPct ?? 0)));
   const user = useAuthStore((s) => s.user);
   const learningMode = useUserStore((s) => s.learningMode);
   const displayName = useUserStore((s) => s.displayName);
@@ -203,6 +206,79 @@ export default function ProfileScreen() {
           >
             Linguistic enthusiast
           </Text>
+        </View>
+
+        {/* Overall progress band — reads user_overall_progress (PR3) */}
+        <View style={{ paddingHorizontal: Spacing.xxl, marginBottom: moderateScale(20) }}>
+          <View
+            style={{
+              backgroundColor: Colors.surfaceContainerLow,
+              borderRadius: Radius.lg,
+              padding: moderateScale(18),
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                marginBottom: Spacing.sm,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: Fonts.dmSans.bold,
+                  fontSize: moderateScale(10),
+                  letterSpacing: 1.8,
+                  color: Colors.tertiary,
+                  textTransform: 'uppercase',
+                }}
+                maxFontSizeMultiplier={1.4}
+              >
+                Overall progress
+              </Text>
+              <Text
+                style={{
+                  fontFamily: Fonts.dmSans.bold,
+                  fontSize: moderateScale(20),
+                  color: Colors.onSurface,
+                }}
+                maxFontSizeMultiplier={1.3}
+              >
+                {overall.isLoading ? '—' : `${overallPct}%`}
+              </Text>
+            </View>
+            <View
+              style={{
+                height: moderateScale(8),
+                backgroundColor: Colors.surfaceContainerHighest,
+                borderRadius: Radius.full,
+                overflow: 'hidden',
+              }}
+              accessibilityRole="progressbar"
+              accessibilityLabel={`Overall progress: ${overallPct} percent`}
+            >
+              <View
+                style={{
+                  height: '100%',
+                  width: `${overallPct}%`,
+                  backgroundColor: Colors.primary,
+                  borderRadius: Radius.full,
+                }}
+              />
+            </View>
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.regular,
+                fontSize: moderateScale(11),
+                color: Colors.tertiary,
+                marginTop: Spacing.sm,
+              }}
+              maxFontSizeMultiplier={1.3}
+            >
+              Lessons + games combined
+            </Text>
+          </View>
         </View>
 
         {/* Two stat cards — container-low */}

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale } from 'react-native-size-matters';
@@ -7,27 +7,7 @@ import { Fonts } from '../constants/fonts';
 import { Spacing, Radius } from '../constants/spacing';
 import { Icons } from '../constants/icons';
 import { deviceTtsAudioService } from '../services/audio/deviceTtsAudioService';
-import emergencyData from '../data/emergency.json';
-
-type EmergencyItem = {
-  kn: string;
-  roman: string;
-  en: string;
-  audio: string;
-};
-
-type EmergencyGroup = {
-  id: string;
-  label: string;
-  icon: string;
-  items: EmergencyItem[];
-};
-
-type EmergencyFile = {
-  groups: EmergencyGroup[];
-};
-
-const GROUPS = (emergencyData as EmergencyFile).groups;
+import { useEmergencyPhrases } from '../hooks/useEmergencyPhrases';
 
 function GroupIcon({ id }: { id: string }) {
   const color = Colors.primary;
@@ -39,6 +19,7 @@ function GroupIcon({ id }: { id: string }) {
 export default function EmergencyScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { data: groups, isLoading, isError, refetch } = useEmergencyPhrases();
 
   const play = (text: string) => {
     deviceTtsAudioService
@@ -88,151 +69,210 @@ export default function EmergencyScreen() {
         </Text>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: moderateScale(40) + insets.bottom }}
-      >
-        <View style={{ paddingHorizontal: Spacing.xxl, paddingTop: Spacing.md }}>
+      {isLoading ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      ) : isError || !groups ? (
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: Spacing.xxl,
+            gap: Spacing.md,
+          }}
+        >
           <Text
             style={{
-              fontFamily: Fonts.dmSans.regular,
-              fontSize: moderateScale(14),
-              color: Colors.tertiary,
-              lineHeight: moderateScale(20),
-              marginBottom: moderateScale(28),
+              fontFamily: Fonts.dmSans.bold,
+              fontSize: moderateScale(16),
+              color: Colors.onSurface,
+              textAlign: 'center',
             }}
           >
-            Survival phrases for the auto, shop & street. Works offline.{'\n'}
-            <Text style={{ fontFamily: Fonts.lora.italic, fontSize: moderateScale(12) }}>
-              [Unverified — pending Kannada-speaker review]
-            </Text>
+            Couldn&apos;t load phrases
           </Text>
-
-          {GROUPS.map((group, gi) => (
-            <View
-              key={group.id}
-              style={{
-                marginBottom: gi === GROUPS.length - 1 ? 0 : moderateScale(28),
-              }}
-            >
-              {/* Group label */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: moderateScale(10),
-                  marginBottom: moderateScale(14),
-                  paddingHorizontal: Spacing.xs,
-                }}
-              >
-                <View
-                  style={{
-                    width: moderateScale(28),
-                    height: moderateScale(28),
-                    borderRadius: Radius.sm,
-                    backgroundColor: Colors.surfaceContainerHigh,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <GroupIcon id={group.id} />
-                </View>
-                <Text
-                  style={{
-                    fontFamily: Fonts.dmSans.bold,
-                    fontSize: moderateScale(12),
-                    letterSpacing: 2,
-                    color: Colors.tertiary,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {group.label}
-                </Text>
-              </View>
-
-              {/* Phrase rows — tonal surface, no border */}
-              <View
-                style={{
-                  backgroundColor: Colors.surfaceContainerHighest,
-                  borderRadius: Radius.lg,
-                  overflow: 'hidden',
-                }}
-              >
-                {group.items.map((item, idx) => (
-                  <View
-                    key={`${group.id}-${idx}`}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      paddingVertical: moderateScale(14),
-                      paddingHorizontal: Spacing.lg,
-                      // surface shift acts as separator (§2 No-Line)
-                      backgroundColor:
-                        idx % 2 === 0
-                          ? Colors.surfaceContainerHighest
-                          : Colors.surfaceContainerHigh,
-                    }}
-                  >
-                    <View style={{ flex: 1, paddingRight: moderateScale(14) }}>
-                      <Text
-                        style={{
-                          fontFamily: Fonts.notoSerifKannada.bold,
-                          fontSize: moderateScale(22),
-                          lineHeight: moderateScale(34),
-                          color: Colors.primary,
-                          marginBottom: moderateScale(2),
-                        }}
-                        maxFontSizeMultiplier={1.4}
-                      >
-                        {item.kn}
-                      </Text>
-                      <Text
-                        style={{
-                          fontFamily: Fonts.lora.italic,
-                          fontSize: moderateScale(13),
-                          color: Colors.tertiary,
-                          lineHeight: moderateScale(18),
-                        }}
-                        maxFontSizeMultiplier={1.4}
-                      >
-                        {item.roman} · {item.en}
-                      </Text>
-                    </View>
-                    <Pressable
-                      onPress={() => play(item.audio)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Listen: ${item.en}`}
-                      hitSlop={8}
-                      style={({ pressed }) => ({
-                        width: moderateScale(44),
-                        height: moderateScale(44),
-                        borderRadius: Radius.full,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: pressed ? 0.6 : 1,
-                      })}
-                    >
-                      <Icons.audio size={18} color={Colors.secondary} />
-                    </Pressable>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ))}
-
           <Text
             style={{
               fontFamily: Fonts.dmSans.regular,
-              fontSize: moderateScale(12),
+              fontSize: moderateScale(13),
               color: Colors.tertiary,
               textAlign: 'center',
-              marginTop: moderateScale(28),
             }}
           >
-            Works offline. Audio uses your device&apos;s voice.
+            Check your connection and try again.
           </Text>
+          <Pressable
+            onPress={() => refetch()}
+            accessibilityRole="button"
+            accessibilityLabel="Retry"
+            style={({ pressed }) => ({
+              backgroundColor: Colors.primary,
+              borderRadius: Radius.lg,
+              paddingVertical: Spacing.md,
+              paddingHorizontal: Spacing.xl,
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            })}
+          >
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.bold,
+                fontSize: moderateScale(14),
+                color: Colors.onPrimary,
+              }}
+            >
+              Retry
+            </Text>
+          </Pressable>
         </View>
-      </ScrollView>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: moderateScale(40) + insets.bottom }}
+        >
+          <View style={{ paddingHorizontal: Spacing.xxl, paddingTop: Spacing.md }}>
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.regular,
+                fontSize: moderateScale(14),
+                color: Colors.tertiary,
+                lineHeight: moderateScale(20),
+                marginBottom: moderateScale(28),
+              }}
+            >
+              Survival phrases for the auto, shop & street.{'\n'}
+              <Text style={{ fontFamily: Fonts.lora.italic, fontSize: moderateScale(12) }}>
+                [Unverified — pending Kannada-speaker review]
+              </Text>
+            </Text>
+
+            {groups.map((group, gi) => (
+              <View
+                key={group.id}
+                style={{
+                  marginBottom: gi === groups.length - 1 ? 0 : moderateScale(28),
+                }}
+              >
+                {/* Group label */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: moderateScale(10),
+                    marginBottom: moderateScale(14),
+                    paddingHorizontal: Spacing.xs,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: moderateScale(28),
+                      height: moderateScale(28),
+                      borderRadius: Radius.sm,
+                      backgroundColor: Colors.surfaceContainerHigh,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <GroupIcon id={group.id} />
+                  </View>
+                  <Text
+                    style={{
+                      fontFamily: Fonts.dmSans.bold,
+                      fontSize: moderateScale(12),
+                      letterSpacing: 2,
+                      color: Colors.tertiary,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {group.label}
+                  </Text>
+                </View>
+
+                {/* Phrase rows — tonal surface, no border */}
+                <View
+                  style={{
+                    backgroundColor: Colors.surfaceContainerHighest,
+                    borderRadius: Radius.lg,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {group.items.map((item, idx) => (
+                    <View
+                      key={item.id}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingVertical: moderateScale(14),
+                        paddingHorizontal: Spacing.lg,
+                        // surface shift acts as separator (§2 No-Line)
+                        backgroundColor:
+                          idx % 2 === 0
+                            ? Colors.surfaceContainerHighest
+                            : Colors.surfaceContainerHigh,
+                      }}
+                    >
+                      <View style={{ flex: 1, paddingRight: moderateScale(14) }}>
+                        <Text
+                          style={{
+                            fontFamily: Fonts.notoSerifKannada.bold,
+                            fontSize: moderateScale(22),
+                            lineHeight: moderateScale(34),
+                            color: Colors.primary,
+                            marginBottom: moderateScale(2),
+                          }}
+                          maxFontSizeMultiplier={1.4}
+                        >
+                          {item.kannada}
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: Fonts.lora.italic,
+                            fontSize: moderateScale(13),
+                            color: Colors.tertiary,
+                            lineHeight: moderateScale(18),
+                          }}
+                          maxFontSizeMultiplier={1.4}
+                        >
+                          {item.transliteration ? `${item.transliteration} · ${item.meaning}` : item.meaning}
+                        </Text>
+                      </View>
+                      <Pressable
+                        onPress={() => play(item.audioUrl ?? item.kannada)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Listen: ${item.meaning}`}
+                        hitSlop={8}
+                        style={({ pressed }) => ({
+                          width: moderateScale(44),
+                          height: moderateScale(44),
+                          borderRadius: Radius.full,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: pressed ? 0.6 : 1,
+                        })}
+                      >
+                        <Icons.audio size={18} color={Colors.secondary} />
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.regular,
+                fontSize: moderateScale(12),
+                color: Colors.tertiary,
+                textAlign: 'center',
+                marginTop: moderateScale(28),
+              }}
+            >
+              Audio uses your device&apos;s voice.
+            </Text>
+          </View>
+        </ScrollView>
+      )}
     </View>
   );
 }
