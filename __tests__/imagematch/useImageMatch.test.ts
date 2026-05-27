@@ -1,9 +1,18 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { useImageMatch, deriveOptionState } from '../../src/games/imagematch/hooks/useImageMatch';
+import type { VocabItem } from '../../src/games/imagematch/types';
+
+const FIXTURE: VocabItem[] = Array.from({ length: 12 }, (_, i) => ({
+  id:    `v-${i + 1}`,
+  kn:    `K${i + 1}`,
+  ph:    `k${i + 1}`,
+  en:    `english ${i + 1}`,
+  emoji: '🔤',
+}));
 
 describe('useImageMatch', () => {
   it('initial state is correct', () => {
-    const { result } = renderHook(() => useImageMatch());
+    const { result } = renderHook(() => useImageMatch(FIXTURE));
     expect(result.current.currentIndex).toBe(0);
     expect(result.current.phase).toBe('playing');
     expect(result.current.answered).toBe(false);
@@ -12,13 +21,13 @@ describe('useImageMatch', () => {
     expect(result.current.hintVisible).toBe(false);
   });
 
-  it('totalQuestions is 10', () => {
-    const { result } = renderHook(() => useImageMatch());
+  it('totalQuestions is 10 when bank has >=10 items', () => {
+    const { result } = renderHook(() => useImageMatch(FIXTURE));
     expect(result.current.totalQuestions).toBe(10);
   });
 
   it('correct tap sets answered=true, selectedId=targetId, score=1', () => {
-    const { result } = renderHook(() => useImageMatch());
+    const { result } = renderHook(() => useImageMatch(FIXTURE));
     const targetId = result.current.currentQuestion.target.id;
 
     act(() => {
@@ -31,7 +40,7 @@ describe('useImageMatch', () => {
   });
 
   it('wrong tap sets answered=true, selectedId=wrongId, score=0', () => {
-    const { result } = renderHook(() => useImageMatch());
+    const { result } = renderHook(() => useImageMatch(FIXTURE));
     const wrongId = result.current.currentQuestion.options.find(
       (o) => o.id !== result.current.currentQuestion.target.id,
     )!.id;
@@ -46,7 +55,7 @@ describe('useImageMatch', () => {
   });
 
   it('calling handleOptionTap twice is a no-op on second call', () => {
-    const { result } = renderHook(() => useImageMatch());
+    const { result } = renderHook(() => useImageMatch(FIXTURE));
     const targetId = result.current.currentQuestion.target.id;
 
     act(() => { result.current.handleOptionTap(targetId); });
@@ -56,7 +65,7 @@ describe('useImageMatch', () => {
   });
 
   it('handleNext while answered=false is a no-op', () => {
-    const { result } = renderHook(() => useImageMatch());
+    const { result } = renderHook(() => useImageMatch(FIXTURE));
 
     act(() => { result.current.handleNext(); });
 
@@ -64,7 +73,7 @@ describe('useImageMatch', () => {
   });
 
   it('after correct tap and handleNext, currentIndex=1, answered=false, selectedId=null, hintVisible=false', () => {
-    const { result } = renderHook(() => useImageMatch());
+    const { result } = renderHook(() => useImageMatch(FIXTURE));
 
     act(() => {
       result.current.handleOptionTap(result.current.currentQuestion.target.id);
@@ -80,7 +89,7 @@ describe('useImageMatch', () => {
   });
 
   it('toggleHint flips hintVisible false → true → false', () => {
-    const { result } = renderHook(() => useImageMatch());
+    const { result } = renderHook(() => useImageMatch(FIXTURE));
 
     act(() => { result.current.toggleHint(); });
     expect(result.current.hintVisible).toBe(true);
@@ -89,10 +98,11 @@ describe('useImageMatch', () => {
     expect(result.current.hintVisible).toBe(false);
   });
 
-  it('after answering all 10 questions and last handleNext, phase=result', () => {
-    const { result } = renderHook(() => useImageMatch());
+  it('after answering all questions and last handleNext, phase=result', () => {
+    const { result } = renderHook(() => useImageMatch(FIXTURE));
+    const total = result.current.totalQuestions;
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < total; i++) {
       act(() => {
         result.current.handleOptionTap(result.current.currentQuestion.target.id);
       });
@@ -105,7 +115,7 @@ describe('useImageMatch', () => {
   });
 
   it('restart resets all state to initial values and phase=playing', () => {
-    const { result } = renderHook(() => useImageMatch());
+    const { result } = renderHook(() => useImageMatch(FIXTURE));
 
     act(() => {
       result.current.handleOptionTap(result.current.currentQuestion.target.id);
@@ -119,6 +129,33 @@ describe('useImageMatch', () => {
     expect(result.current.answered).toBe(false);
     expect(result.current.selectedId).toBeNull();
     expect(result.current.hintVisible).toBe(false);
+  });
+
+  it('fires onAttempt with target.id and isCorrect=true on correct tap', () => {
+    const onAttempt = jest.fn();
+    const { result } = renderHook(() => useImageMatch(FIXTURE, undefined, onAttempt));
+    const targetId = result.current.currentQuestion.target.id;
+
+    act(() => {
+      result.current.handleOptionTap(targetId);
+    });
+
+    expect(onAttempt).toHaveBeenCalledWith({ itemId: targetId, isCorrect: true });
+  });
+
+  it('fires onAttempt with target.id and isCorrect=false on wrong tap', () => {
+    const onAttempt = jest.fn();
+    const { result } = renderHook(() => useImageMatch(FIXTURE, undefined, onAttempt));
+    const target = result.current.currentQuestion.target;
+    const wrongId = result.current.currentQuestion.options.find(
+      (o) => o.id !== target.id,
+    )!.id;
+
+    act(() => {
+      result.current.handleOptionTap(wrongId);
+    });
+
+    expect(onAttempt).toHaveBeenCalledWith({ itemId: target.id, isCorrect: false });
   });
 });
 

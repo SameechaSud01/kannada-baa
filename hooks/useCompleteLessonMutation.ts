@@ -55,6 +55,7 @@ export function useCompleteLessonMutation() {
     },
     onSuccess: ({ userId }) => {
       queryClient.invalidateQueries({ queryKey: ['lesson-completions', userId] });
+      queryClient.invalidateQueries({ queryKey: ['overall-progress', userId] });
     },
   });
 }

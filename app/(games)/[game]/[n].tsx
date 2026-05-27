@@ -28,9 +28,9 @@ export default function GameRunnerScreen() {
     case 'opposites':
       return <OppositeGame lessonNo={lessonNo} />;
     case 'dictation':
-      return <DictationGame />;
+      return <DictationGame lessonNo={lessonNo} />;
     case 'image-match':
-      return <ImageMatchGame />;
+      return <ImageMatchGame lessonNo={lessonNo} />;
     case 'quiz':
     case 'conversations':
       return (
