@@ -12,23 +12,17 @@ import { useAuthStore } from '../../stores/useAuthStore';
 import { useDbLessons } from '../../hooks/useLessons';
 import { useUserStore } from '../../stores/useUserStore';
 import { PLANNED_LESSON_SLOTS, TOTAL_LESSON_SLOTS } from '../../constants/lessons/plannedLessons';
-import type { Phrase } from '../../constants/lessons/types';
-import { deviceTtsAudioService } from '../../services/audio/deviceTtsAudioService';
-import { Toasts } from '../../components/modals/instances/toastCatalog';
-import { useModal } from '../../components/modals/ModalHost';
-import { PhraseDetailSheet } from '../../components/modals/instances/PhraseDetailSheet';
 import { formatFirstName } from '../../utils/formatName';
 import { useCompletedLessons, useStreak } from '../../hooks/progress';
-
-const STARTER_PHRASE: Phrase = {
-  kannada: 'ನಮಸ್ಕಾರ',
-  transliteration: 'namaskara',
-  english: 'Hello / Greetings',
-};
+import { useKarnatakaFunFacts } from '../../hooks/useKarnatakaFunFacts';
+import type { FunFact } from '../../services/api/karnataka_fun_facts';
+import FUN_FACTS_FALLBACK from '../../data/karnataka_fun_facts.json';
 
 const ESTIMATED_MIN_PER_LESSON = 5;
 
-function wordOfDayIndex(arrayLength: number): number {
+type CardFact = Pick<FunFact, 'category' | 'fact'>;
+
+function factOfDayIndex(arrayLength: number): number {
   if (arrayLength <= 0) return 0;
   const dateStr = new Date().toISOString().split('T')[0];
   let sum = 0;
@@ -43,9 +37,9 @@ export default function HomeScreen() {
   const streak = useStreak();
   const user = useAuthStore((s) => s.user);
   const displayName = useUserStore((s) => s.displayName);
-  const modal = useModal();
   const lessonsQuery = useDbLessons();
   const dbLessons = lessonsQuery.data ?? [];
+  const factsQuery = useKarnatakaFunFacts();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(4)).current;
@@ -57,6 +51,12 @@ export default function HomeScreen() {
     ]).start();
   }, []);
 
+  useEffect(() => {
+    if (factsQuery.error) {
+      console.warn('[home] fun-facts fetch failed', factsQuery.error);
+    }
+  }, [factsQuery.error]);
+
   const rawName =
     displayName ||
     user?.user_metadata?.full_name ||
@@ -65,15 +65,14 @@ export default function HomeScreen() {
     'there';
   const userName = formatFirstName(rawName, 'there');
 
-  // Word of the Day — drawn from learned phrases when available.
+  // Karnataka fun fact — DB-backed with bundled JSON fallback.
+  const facts: readonly CardFact[] =
+    factsQuery.data && factsQuery.data.length > 0
+      ? factsQuery.data
+      : (FUN_FACTS_FALLBACK as readonly CardFact[]);
+  const factOfDay = facts[factOfDayIndex(facts.length)];
+
   const completedSlugSet = new Set(completedLessons);
-  const completedPhrases: Phrase[] = dbLessons
-    .filter((l) => completedSlugSet.has(l.slug))
-    .flatMap((l) => l.phrases);
-  const hasCompletedPhrases = completedPhrases.length > 0;
-  const wordOfDay: Phrase = hasCompletedPhrases
-    ? completedPhrases[wordOfDayIndex(completedPhrases.length)]
-    : STARTER_PHRASE;
 
   const completedCount = Math.min(completedLessons.length, TOTAL_LESSON_SLOTS);
   const progressPercent = Math.round((completedCount / TOTAL_LESSON_SLOTS) * 100);
@@ -91,15 +90,6 @@ export default function HomeScreen() {
 
   const handleStartNext = () => {
     if (nextLessonSlot) router.push(`/lesson/${nextLessonSlot.slug}`);
-  };
-
-  const handleListenWordOfDay = () => {
-    const txt = wordOfDay.transliteration;
-    if (!txt) return;
-    deviceTtsAudioService.play(txt).catch((err) => {
-      console.warn('[audio] home word-of-day failed', err);
-      Toasts.audioFailed(handleListenWordOfDay);
-    });
   };
 
   return (
@@ -178,27 +168,16 @@ export default function HomeScreen() {
             Namaskāra, {userName}
           </Text>
 
-          {/* Word of the Day */}
-          <Pressable
-            onPress={() =>
-              modal.show({
-                kind: 'sheet',
-                component: PhraseDetailSheet,
-                props: {
-                  phrase: wordOfDay,
-                  onDismiss: () => modal.dismiss(),
-                },
-              })
-            }
-            accessibilityRole="button"
-            accessibilityLabel={`Word of the day: ${wordOfDay.english}. Tap for breakdown.`}
-            style={({ pressed }) => ({
+          {/* Karnataka fun fact */}
+          <View
+            accessibilityRole="text"
+            accessibilityLabel={`Did you know? ${factOfDay.category}. ${factOfDay.fact}`}
+            style={{
               backgroundColor: Colors.surfaceContainerLow,
               borderRadius: Radius.xl,
               padding: Spacing.xxl,
               marginBottom: Spacing.lg,
-              transform: [{ scale: pressed ? 0.99 : 1 }],
-            })}
+            }}
           >
             <Text
               style={{
@@ -207,77 +186,37 @@ export default function HomeScreen() {
                 letterSpacing: 2,
                 color: Colors.tertiary,
                 textTransform: 'uppercase',
-                marginBottom: moderateScale(14),
               }}
               maxFontSizeMultiplier={1.4}
             >
-              Word of the day
+              Did you know?
+            </Text>
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.bold,
+                fontSize: moderateScale(10),
+                letterSpacing: 1.4,
+                color: Colors.secondary,
+                textTransform: 'uppercase',
+                marginTop: moderateScale(4),
+              }}
+              maxFontSizeMultiplier={1.4}
+            >
+              {factOfDay.category}
             </Text>
             <Text
               style={{
                 fontFamily: Fonts.lora.italic,
-                fontSize: moderateScale(34),
-                lineHeight: moderateScale(46),
+                fontSize: moderateScale(16),
+                lineHeight: moderateScale(24),
                 color: Colors.primary,
-                marginBottom: moderateScale(6),
+                marginTop: moderateScale(14),
               }}
               maxFontSizeMultiplier={1.3}
-              adjustsFontSizeToFit
-              numberOfLines={2}
             >
-              {wordOfDay.transliteration}
+              {factOfDay.fact}
             </Text>
-            <Text
-              style={{
-                fontFamily: Fonts.dmSans.regular,
-                fontSize: moderateScale(13),
-                color: Colors.tertiary,
-                marginBottom: moderateScale(4),
-              }}
-              maxFontSizeMultiplier={1.4}
-            >
-              {wordOfDay.english}
-            </Text>
-            <Text
-              style={{
-                fontFamily: Fonts.notoSerifKannada.regular,
-                fontSize: moderateScale(13),
-                color: Colors.tertiary,
-                opacity: 0.7,
-                marginBottom: moderateScale(14),
-              }}
-              maxFontSizeMultiplier={1.4}
-            >
-              {wordOfDay.kannada}
-            </Text>
-            <Pressable
-              onPress={handleListenWordOfDay}
-              accessibilityRole="button"
-              accessibilityLabel={`Listen: ${wordOfDay.english}`}
-              hitSlop={8}
-              style={({ pressed }) => ({
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: Spacing.sm,
-                minHeight: moderateScale(44),
-                alignSelf: 'flex-start',
-                opacity: pressed ? 0.6 : 1,
-              })}
-            >
-              <Icons.audio size={18} color={Colors.secondary} />
-              <Text
-                style={{
-                  fontFamily: Fonts.dmSans.bold,
-                  fontSize: moderateScale(11),
-                  letterSpacing: 1.8,
-                  color: Colors.secondary,
-                  textTransform: 'uppercase',
-                }}
-              >
-                Listen
-              </Text>
-            </Pressable>
-          </Pressable>
+          </View>
 
           {/* Progress ring */}
           <Pressable

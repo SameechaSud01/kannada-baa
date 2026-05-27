@@ -1,0 +1,100 @@
+-- spec_docs/Sameecha/spec_home_fun_fact.md
+-- Run in the Supabase SQL editor.
+-- Each block is idempotent and safe to re-run, EXCEPT Migration 3 (drop word_of_the_day)
+-- which is irreversible without a Supabase point-in-time restore.
+--
+-- This migration:
+--   1. Creates public.karnataka_fun_facts (table + RLS + read policy).
+--   2. Seeds 35 rows from karnataka_fun_facts.csv (upsert on fact_no).
+--   3. Drops public.word_of_the_day — confirmed unused via grep across
+--      services/, hooks/, stores/, components/, app/ (zero references).
+--      The home Word-of-the-Day card was sourced from completed-lesson
+--      phrases in-memory, not from this scaffolded table.
+--
+-- Source-of-truth content: ../../karnataka_fun_facts.csv (35 rows).
+-- A mirrored data/karnataka_fun_facts.json ships alongside as the
+-- loading/error/offline fallback for the home card.
+
+-- ============================================================
+-- Migration 1 — Create karnataka_fun_facts table + RLS
+-- ============================================================
+create table if not exists public.karnataka_fun_facts (
+  id          uuid primary key default gen_random_uuid(),
+  fact_no     int  not null unique check (fact_no between 1 and 999),
+  category    text not null check (category in ('History','Food','Cinema','Literature','Culture','Nature')),
+  fact        text not null,
+  created_at  timestamptz not null default now()
+);
+
+alter table public.karnataka_fun_facts enable row level security;
+
+-- Policy naming + auth.role() pattern mirrors emergency_phrases
+-- (services/api/migrations/2026-05-27_db_wiring_games_and_overall.sql).
+drop policy if exists "karnataka_fun_facts_select_authenticated" on public.karnataka_fun_facts;
+create policy "karnataka_fun_facts_select_authenticated" on public.karnataka_fun_facts
+  for select using (auth.role() = 'authenticated');
+
+-- No insert/update/delete policies. Writes go through service-role only.
+
+-- ============================================================
+-- Migration 2 — Seed 35 fun facts from karnataka_fun_facts.csv
+-- ============================================================
+-- Upsert target is fact_no (unique). Re-running this block updates
+-- category/fact in place; existing UUIDs are preserved.
+
+insert into public.karnataka_fun_facts (fact_no, category, fact) values
+  (1,  'History',    'Karnataka, a state in South India, was formed on November 1, 1956, and was renamed from ''Mysore State'' to ''Karnataka'' in 1973.'),
+  (2,  'History',    'Hampi, a ruined city in Karnataka and a UNESCO World Heritage Site, was the capital of the Vijayanagara Empire and was once among the richest cities in the world during the 14th–16th centuries.'),
+  (3,  'History',    'The Gomateshwara statue at Shravanabelagola in Karnataka, standing about 57 feet tall, is carved from a single block of granite and is over 1,000 years old.'),
+  (4,  'History',    'The Mysore Dasara, a 10-day festival celebrated in the city of Mysuru, has been observed for over 400 years, dating back to the Vijayanagara Empire.'),
+  (5,  'History',    'Karnataka has the second-highest number of nationally protected monuments in India, after Uttar Pradesh.'),
+  (6,  'History',    'The Vijayanagara Empire, one of South India''s greatest medieval empires, ruled from Hampi (in present-day Karnataka) between the 14th and 16th centuries.'),
+  (7,  'History',    'Maski, a town in Karnataka''s Raichur district, is where the first Ashoka edict mentioning Emperor Ashoka by name was discovered, confirming his historical identity.'),
+  (8,  'Food',       'Mysore Pak, a popular Indian sweet made of ghee, sugar, and gram flour, was invented in the kitchens of the Mysore Palace by a royal cook named Kakasura Madappa.'),
+  (9,  'Food',       'Bisi Bele Bath, a traditional Karnataka rice dish, literally means ''hot lentil rice'' in Kannada.'),
+  (10, 'Food',       'The Masala Dosa, a famous South Indian crepe stuffed with spiced potato, is believed to have originated in Udupi, a coastal town in Karnataka.'),
+  (11, 'Food',       'Davangere, a city in central Karnataka, is famous for ''Benne Dosa'' — a crispy dosa drenched in white butter (''benne'' means butter in Kannada).'),
+  (12, 'Food',       'Coorg (Kodagu), a hilly region in Karnataka, is known for Pandi Curry — a spicy pork dish made with ''kachampuli,'' a local vinegar from the garcinia fruit.'),
+  (13, 'Food',       'Chikmagalur, a district in Karnataka, is the birthplace of Indian coffee — legend says a Sufi saint named Baba Budan smuggled seven coffee beans from Yemen in the 17th century.'),
+  (14, 'Food',       'Dharwad Pedha, a milk-based sweet from the city of Dharwad in Karnataka, holds a Geographical Indication (GI) tag and has been made by the same family for around 175 years.'),
+  (15, 'Cinema',     'The Kannada film industry, based in Karnataka, is nicknamed ''Sandalwood'' because of the state''s historic association with Mysore sandalwood trade.'),
+  (16, 'Cinema',     'Dr. Rajkumar, a legendary Kannada actor, acted in over 200 films and also won a National Award as a playback singer.'),
+  (17, 'Cinema',     'The Kannada film ''KGF: Chapter 2'' (2022) became one of the highest-grossing Indian films of all time.'),
+  (18, 'Cinema',     '''Samskara'' (1970), based on a Kannada novel by U.R. Ananthamurthy, won the first National Film Award for Best Feature Film given to a Kannada movie.'),
+  (19, 'Cinema',     'Girish Kasaravalli, a Kannada filmmaker, is one of the few Indian directors to win the National Film Award for Best Feature Film four times.'),
+  (20, 'Literature', 'Karnataka has produced eight Jnanpith Award winners (India''s highest literary honor) for Kannada literature — the most for any Indian language, tied with Hindi.'),
+  (21, 'Literature', 'Kuvempu, a celebrated Kannada poet and Jnanpith laureate, wrote Karnataka''s state anthem ''Jaya Bharata Jananiya Tanujate.'''),
+  (22, 'Literature', 'The Vachana movement of 12th-century Karnataka, led by the saint-poet Basavanna, produced revolutionary poetry that challenged caste and gender hierarchies.'),
+  (23, 'Literature', 'Pampa, known as the ''Adikavi'' (first poet) of Kannada literature, wrote his epic ''Vikramarjuna Vijaya'' in the 10th century.'),
+  (24, 'Culture',    'Yakshagana, a traditional folk theater form from coastal Karnataka, features elaborate costumes, painted faces, and overnight performances blending dance, music, and dialogue.'),
+  (25, 'Nature',     'Jog Falls, located in Karnataka''s Shimoga district, drops about 253 meters (830 feet), making it one of the highest plunge waterfalls in India.'),
+  (26, 'Nature',     'Karnataka has five national parks, including Bandipur and Nagarhole — both major tiger reserves in South India.'),
+  (27, 'Nature',     'Kudremukh, a mountain range in Karnataka, gets its name from the Kannada words meaning ''horse face,'' inspired by its distinctive shape.'),
+  (28, 'Nature',     'A large portion of the Western Ghats — a UNESCO biodiversity hotspot running along India''s west coast — lies within Karnataka.'),
+  (29, 'Nature',     'Karnataka''s coastline along the Arabian Sea stretches roughly 320 km, dotted with beaches and port towns like Mangaluru and Karwar.'),
+  (30, 'Culture',    'Bengaluru, the capital of Karnataka, is called the ''Silicon Valley of India'' and hosts the headquarters of Infosys, Wipro, and ISRO.'),
+  (31, 'Culture',    'Channapatna, a town near Bengaluru, is famous for its colorful lacquered wooden toys — a craft that reportedly began during Tipu Sultan''s reign and now holds a GI tag.'),
+  (32, 'Culture',    'Mysore Silk sarees and Mysore Sandalwood Soap are both produced by Karnataka state-run enterprises founded by the Wadiyar royal family in the early 1900s.'),
+  (33, 'Culture',    'Bengaluru''s name reportedly comes from ''Benda Kaaluru'' (Kannada for ''town of boiled beans''), based on a folk legend involving a hungry Hoysala king.'),
+  (34, 'Culture',    'Karnataka''s official state animal is the Indian elephant, and its state bird is the Indian roller — a brightly colored bird known for its acrobatic flight.'),
+  (35, 'Culture',    'Kannada, the official language of Karnataka, is one of India''s classical languages with a literary history stretching back over 1,500 years.')
+on conflict (fact_no) do update
+  set category = excluded.category,
+      fact     = excluded.fact;
+
+-- ============================================================
+-- Migration 3 — Drop orphaned word_of_the_day table
+-- ============================================================
+-- ⚠️  IRREVERSIBLE without a Supabase point-in-time restore.
+-- Pre-flight check (run manually before applying this migration):
+--   select count(*) from public.word_of_the_day;
+-- Expected: 0. If non-zero, investigate before proceeding — the spec
+-- assumes the table was never populated.
+--
+-- Confirmed unused at spec-write time:
+--   grep -rn "word_of_the_day" services/ hooks/ stores/ components/ app/
+--   → zero matches.
+-- Only references were in docs/foundation/STATE.md (line 152 + 177),
+-- updated in the same PR that lands this migration.
+
+drop table if exists public.word_of_the_day;

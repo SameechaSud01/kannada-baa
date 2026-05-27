@@ -92,7 +92,6 @@ Current usage is **content audio only** — TTS playback of Kannada phrases via 
 
 | Where | What plays |
 |---|---|
-| Home — Word of the Day "Listen" | TTS of phrase |
 | Lesson intake | Auto-play TTS on phrase mount; "Replay" button |
 | Lesson drill (`listen_pick`) | Auto-play TTS on item mount; "Replay" button |
 | Emergency phrase | TTS on tap |

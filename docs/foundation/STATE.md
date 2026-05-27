@@ -143,13 +143,13 @@ Client: [services/api/supabase.ts](../../services/api/supabase.ts). Singleton; r
 | `dictation_items` / `dictation_progress` | Server backing for the Dictation game. Per-item personal-best via `record_dictation_attempt` RPC. | items: `id` (PK), `lesson_id`, `sort_order`, `audio_url` (nullable), `expected_answer`, `accepted_json`, `phonetic` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` | [services/api/games/dictation.ts](../../services/api/games/dictation.ts) |
 | `image_match_items` / `image_match_progress` | Server backing for the Image Match game. Per-item personal-best via `record_image_match_attempt` RPC. Runner samples distractors from the lesson + 2 neighbors for sparse lessons. | items: `id` (PK), `lesson_id`, `sort_order`, `image_url` (nullable), `kannada`, `transliteration`, `meaning`, `emoji` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` | [services/api/games/imageMatch.ts](../../services/api/games/imageMatch.ts) |
 | `emergency_phrases` | Server-backed emergency content (replaces [data/emergency.json](../../data/emergency.json), resolves C10) | `id` (PK), `category`, `kannada`, `transliteration`, `meaning`, `audio_url` (nullable), `sort_order` | [services/api/emergency.ts](../../services/api/emergency.ts) |
+| `karnataka_fun_facts` | Server-backed home-card content (replaces the Word-of-the-Day phrase card; see [spec_home_fun_fact.md](../../spec_docs/Sameecha/spec_home_fun_fact.md)). Bundled [data/karnataka_fun_facts.json](../../data/karnataka_fun_facts.json) is the loading/offline fallback only. | `id` (PK), `fact_no` (int unique), `category` (check-constrained), `fact`, `created_at` | [services/api/karnataka_fun_facts.ts](../../services/api/karnataka_fun_facts.ts) |
 | `user_overall_progress` | Aggregated user metrics. Recomputed server-side via the `recompute_overall_progress` trigger function (formula: 50% lessons + 50% games split 3 ways; subgame complete = ≥80% items correct lifetime). Client reads via `useOverallProgress()`; the Profile screen surfaces `progress_pct`. | `user_id` (PK), `total_score`, `progress_pct`, `recomputed_at` | [services/api/overall.ts](../../services/api/overall.ts) |
 
 #### Scaffolded (exist in DB; not yet read or written by app code)
 
 | Table | Intended purpose | Key columns |
 |---|---|---|
-| `word_of_the_day` | Daily featured word (no consuming feature yet) | `for_date` (date PK), `kannada`, `meaning`, `audio_url` (nullable) |
 | `conversation_items` / `conversation_progress` | Per-item state for the planned Conversations game ([CONTENT.md](CONTENT.md#planned-games-not-yet-implemented)) | items: `id` (PK), `lesson_id`, `scenario`, `turns_json` · progress: `user_id` + `item_id` (PK), `completed`, `attempts`, `last_played` |
 | `quick_quiz_items` / `quick_quiz_progress` | Per-item state for the planned Quick Quiz game | items: `id` (PK), `lesson_id`, `question`, `options_json`, `correct_index` · progress: `user_id` + `item_id` (PK), `is_correct`, `attempts`, `last_played` |
 
@@ -172,9 +172,10 @@ Client: [services/api/supabase.ts](../../services/api/supabase.ts). Singleton; r
 | `opposites_items` / `dictation_items` / `image_match_items` | `select` for any authenticated user; no client writes (seed-only) | [2026-05-27_db_wiring_games_and_overall.sql](../../services/api/migrations/2026-05-27_db_wiring_games_and_overall.sql) |
 | `opposites_progress` / `dictation_progress` / `image_match_progress` | `select`/`insert`/`update` own (`auth.uid() = user_id`); no delete. Writes go through `record_<game>_attempt` SECURITY INVOKER RPCs for personal-best UPSERT semantic. | [2026-05-27_db_wiring_games_and_overall.sql](../../services/api/migrations/2026-05-27_db_wiring_games_and_overall.sql) |
 | `emergency_phrases` | `select` for any authenticated user; no client writes | [2026-05-27_db_wiring_games_and_overall.sql](../../services/api/migrations/2026-05-27_db_wiring_games_and_overall.sql) |
+| `karnataka_fun_facts` | `select` for any authenticated user; no client writes (seed-only via service-role) | [2026-05-27d_karnataka_fun_facts.sql](../../services/api/migrations/2026-05-27d_karnataka_fun_facts.sql) |
 | `user_overall_progress` | `select` own (`auth.uid() = user_id`); no client writes (trigger-managed via `recompute_overall_progress` SECURITY DEFINER function) | [2026-05-27_db_wiring_games_and_overall.sql](../../services/api/migrations/2026-05-27_db_wiring_games_and_overall.sql) |
 
-> **TODO (still-scaffolded tables):** before the first client read/write of `word_of_the_day`, `conversation_items/progress`, or `quick_quiz_items/progress`, apply the same RLS pattern. PR3 wires `dictation_*` and `image_match_*` reads/writes (substrate is already in place from PR1).
+> **TODO (still-scaffolded tables):** before the first client read/write of `conversation_items/progress` or `quick_quiz_items/progress`, apply the same RLS pattern. The orphaned `word_of_the_day` table was dropped in [2026-05-27d_karnataka_fun_facts.sql](../../services/api/migrations/2026-05-27d_karnataka_fun_facts.sql) once the home-card surface that might have consumed it was replaced.
 
 ## TanStack Query
 
@@ -192,6 +193,7 @@ Client: [services/api/supabase.ts](../../services/api/supabase.ts). Singleton; r
 | `['image-match-items', lessonNo]` | Image Match items for one lesson | [services/api/games/imageMatch.ts](../../services/api/games/imageMatch.ts) `fetchImageMatchItemsByLessonNo` |
 | `['overall-progress', userId]` | User's `user_overall_progress` row | [services/api/overall.ts](../../services/api/overall.ts) `fetchOverallProgress` |
 | `['emergency-phrases']` | Grouped emergency phrases (auto / trouble / basics) | [services/api/emergency.ts](../../services/api/emergency.ts) `fetchEmergencyPhrases` |
+| `['karnataka-fun-facts']` | Karnataka fun-fact rows, ordered by `fact_no` (staleTime 24h) | [services/api/karnataka_fun_facts.ts](../../services/api/karnataka_fun_facts.ts) `fetchKarnatakaFunFacts` |
 
 ### Mutation conventions
 
