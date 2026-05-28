@@ -10,7 +10,9 @@
     "typecheck": "npx tsc --noEmit",
     "security-scan": "bash scripts/security-scan.sh",
     "pre-push": "npm run typecheck && npm run security-scan",
-    "test": "jest"
+    "test": "jest",
+    "prepare": "husky",
+    "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.4.2",
@@ -53,6 +55,7 @@
     "@types/jest": "^29.5.14",
     "@types/react": "~19.1.0",
     "babel-preset-expo": "~54.0.10",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-expo": "~54.0.0",
     "typescript": "~5.9.2"

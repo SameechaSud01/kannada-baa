@@ -44,6 +44,7 @@ yarn-error.*
 # local-only: Claude Code config, working specs, scripts, v1 spec doc
 .claude/
 /files/
-/scripts/
+/scripts/*
+!/scripts/postinstall.js
 /namma-app-v1-spec.docx
 
