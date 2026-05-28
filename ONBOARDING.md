@@ -112,7 +112,7 @@ emulator -avd Pixel_6_API_34
 npm run android
 ```
 
-The Metro bundler will start, install Expo Go (or our dev client) into the emulator, and launch the app. First boot takes 1–2 min; subsequent reloads are near-instant.
+The Metro bundler will start, install Expo Go into the emulator, and launch the app. First boot takes 1–2 min; subsequent reloads are near-instant.
 
 ### Or: run on your physical Android phone
 
@@ -129,7 +129,7 @@ Often faster than the emulator on a mid-spec laptop.
 
 | Script | What it does |
 |---|---|
-| `npm start` | Start Metro with the QR code (use Expo Go or a dev client) |
+| `npm start` | Start Metro with the QR code (scan it with the Expo Go app) |
 | `npm run android` | Boot Metro and launch on a connected emulator/device |
 | `npm run web` | Run in browser — limited, primary targets are iOS/Android |
 | `npm run typecheck` | `tsc --noEmit` — strict check, must pass before pushing |
