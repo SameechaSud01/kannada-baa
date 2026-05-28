@@ -1,0 +1,60 @@
+# Block pushes to protected branches, then run TypeScript + security checks.
+set -eu
+
+# git feeds "<local_ref> <local_sha> <remote_ref> <remote_sha>" on stdin.
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/master)
+      branch="${remote_ref#refs/heads/}"
+      echo ""
+      echo "========================================="
+      echo "  Push to protected branch '$branch' is blocked."
+      echo "========================================="
+      echo ""
+      echo "All changes must land on '$branch' via a pull request from a feature branch."
+      echo ""
+      echo "  git switch -c feature/<short-name>"
+      echo "  git push -u origin feature/<short-name>"
+      echo ""
+      echo "To bypass in a true emergency: git push --no-verify"
+      exit 1
+      ;;
+  esac
+done
+
+echo ""
+echo "========================================="
+echo "  Pre-Push Pipeline - Kannada Baa"
+echo "========================================="
+echo ""
+
+echo "[ Step 1/2 ] Running TypeScript type check..."
+if npx tsc --noEmit; then
+  echo "  TypeScript: PASS"
+else
+  echo "  TypeScript: FAIL"
+  echo ""
+  echo "  Fix TypeScript errors before pushing."
+  exit 1
+fi
+
+echo ""
+echo "[ Step 2/2 ] Running security scan..."
+SCRIPT_DIR="$(git rev-parse --show-toplevel)/scripts"
+if [ -f "$SCRIPT_DIR/security-scan.sh" ]; then
+  if bash "$SCRIPT_DIR/security-scan.sh"; then
+    echo ""
+  else
+    echo ""
+    echo "  Security scan failed. Push blocked."
+    exit 1
+  fi
+else
+  echo "  Security scan script not found, skipping."
+fi
+
+echo ""
+echo "========================================="
+echo "  All checks passed. Pushing..."
+echo "========================================="
+echo ""

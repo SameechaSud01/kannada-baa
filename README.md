@@ -26,12 +26,13 @@ A mobile app for learning Kannada — built with Expo (SDK 54), Expo Router, Rea
 git clone <repo-url> "Kannada Baa"
 cd "Kannada Baa"
 
-# 2. Install dependencies
+# 2. Install dependencies. This also runs automatically on install:
+#    - scaffolds .env from .env.example (if you don't have one yet)
+#    - installs the git hooks via husky (no manual step)
 npm install
 
-# 3. Create your .env (see "Environment variables" below)
-#    Ask Samee for the Supabase values — they're not in the repo.
-touch .env
+# 3. Open the generated .env and fill in the Supabase values
+#    (ask Samee — they're not in the repo). See "Environment variables" below.
 
 # 4. Verify the toolchain
 npm run typecheck
@@ -43,7 +44,7 @@ If `typecheck` is clean, you're ready to run the app — see below.
 
 ## Environment variables
 
-Create a `.env` at the repo root with these keys (values come from Samee — Slack/DM him):
+`npm install` scaffolds a `.env` from `.env.example` for you. Open it and fill in these keys (values come from Samee — Slack/DM him):
 
 ```bash
 EXPO_PUBLIC_SUPABASE_URL=...
@@ -220,3 +221,5 @@ npm run pre-push
 ```
 
 This runs `typecheck` and the local secret scan. Don't push with type errors. If `security-scan` flags something, fix it — do not bypass it.
+
+Git hooks (installed automatically by husky on `npm install`) enforce this for you: `pre-commit` and `pre-push` block direct commits/pushes to `main`/`master`, and `pre-push` also runs the typecheck + security scan. All work lands on `main` via a PR from a feature branch. The hooks live in [.husky/](.husky/) — don't bypass them with `--no-verify` outside a true emergency.

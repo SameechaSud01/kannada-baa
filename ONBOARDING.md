@@ -76,15 +76,12 @@ Install these, in order:
 git clone <repo-url> "Kannada Baa"
 cd "Kannada Baa"
 
-# 2. Install dependencies (~3-5 min on first install)
+# 2. Install dependencies (~3-5 min on first install).
+#    This also scaffolds .env from .env.example and installs the git hooks.
 npm install
-
-# 3. Create your .env file at the repo root
-#    Get the actual values from Samee — they are not in the repo.
-ni .env
 ```
 
-Open the new `.env` in VS Code and add:
+`npm install` creates a `.env` for you from `.env.example`. Open it in VS Code and fill in (get the values from Samee — they are not in the repo):
 
 ```
 EXPO_PUBLIC_SUPABASE_URL=...
