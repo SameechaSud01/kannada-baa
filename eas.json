@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 3.0.0"
+    "version": ">= 3.0.0",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -8,11 +9,23 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "store",
+      "environment": "preview",
+      "ios": {
+        "simulator": false
+      }
     },
-    "production": {}
+    "production": {
+      "environment": "production"
+    }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "sameechasudheer@gmail.com",
+        "ascAppId": "6774472275",
+        "appleTeamId": "H6N8QXP993"
+      }
+    }
   }
 }
