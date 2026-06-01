@@ -29,6 +29,11 @@ interface UserState {
   ttsRate: number;
   /** Auto-speak lesson cards on mount, mirrors public.users.auto_replay. */
   autoReplay: boolean;
+  /**
+   * Snapshot of onboarding answers whose server sync failed. Cleared when a
+   * subsequent boot retry succeeds (spec_security_hardening.md §6).
+   */
+  pendingOnboardingSync: OnboardingData | null;
   isHydrated: boolean;
 
   setOnboarding: (data: OnboardingData) => void;
@@ -41,6 +46,7 @@ interface UserState {
   setDailyReminderTime: (time: string | null) => void;
   setTtsRate: (rate: number) => void;
   setAutoReplay: (value: boolean) => void;
+  setPendingOnboardingSync: (data: OnboardingData | null) => void;
   setHydrated: (hydrated: boolean) => void;
   /** Bind the persisted data to a Supabase user id. */
   bindUser: (userId: string) => void;
@@ -66,6 +72,7 @@ export const useUserStore = create<UserState>()(
       dailyReminderTime: null,
       ttsRate: 1.0,
       autoReplay: true,
+      pendingOnboardingSync: null,
       isHydrated: false,
 
       setOnboarding: (data) =>
@@ -101,6 +108,8 @@ export const useUserStore = create<UserState>()(
 
       setAutoReplay: (autoReplay) => set({ autoReplay }),
 
+      setPendingOnboardingSync: (pendingOnboardingSync) => set({ pendingOnboardingSync }),
+
       setHydrated: (isHydrated) => set({ isHydrated }),
 
       bindUser: (userId) => set({ userId }),
@@ -116,6 +125,7 @@ export const useUserStore = create<UserState>()(
           dailyReminderTime: null,
           ttsRate: 1.0,
           autoReplay: true,
+          pendingOnboardingSync: null,
           // mode + permissionDenials + hasSeenTtsWarning are install-scoped, not user-scoped — keep them.
         }),
 
@@ -142,6 +152,7 @@ export const useUserStore = create<UserState>()(
           dailyReminderTime: null,
           ttsRate: 1.0,
           autoReplay: true,
+          pendingOnboardingSync: null,
           // Preserved: mode, hasSeenTtsWarning, permissionDenials, isHydrated —
           // device-scoped state survives account switches.
         }),

@@ -74,9 +74,23 @@ export default function CommitmentScreen() {
       useUserStore.getState().hydrateFromUserRow(row);
       router.replace('/(tabs)');
     } catch (err) {
-      console.warn('[onboarding] completeOnboarding failed', err);
-      Toasts.onboardingSaveFailed();
-      setSubmitting(false);
+      // spec_security_hardening.md §6: don't trap the user on commitment if the
+      // sync fails. Capture the answers, mark local onboarding done, route
+      // forward — the boot path retries on next session.
+      console.warn('[onboarding] completeOnboarding failed; queued for retry', err);
+      useUserStore.getState().setOnboarding({
+        displayName: displayName ?? undefined,
+        learningMode,
+        motivations,
+        dailyGoalMinutes: selected,
+      });
+      useUserStore.getState().setPendingOnboardingSync({
+        displayName: displayName ?? undefined,
+        learningMode,
+        motivations,
+        dailyGoalMinutes: selected,
+      });
+      router.replace('/(tabs)');
     }
   };
 

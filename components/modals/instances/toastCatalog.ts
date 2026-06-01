@@ -65,7 +65,7 @@ export const Toasts = {
       kind: 'error',
       id: 'signIn.invalid',
       title: 'Check your details',
-      subtitle: 'Enter a valid email and a password of 6+ characters',
+      subtitle: 'Enter a valid email and a password of 8+ characters',
     });
   },
 

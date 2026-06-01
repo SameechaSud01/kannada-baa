@@ -36,7 +36,8 @@ export default function LoginScreen() {
   const handleAuth = async () => {
     const normalizedEmail = email.trim().toLowerCase();
 
-    if (!EMAIL_RE.test(normalizedEmail) || password.length < 6) {
+    const minPasswordLength = isSignUp ? 8 : 6;
+    if (!EMAIL_RE.test(normalizedEmail) || password.length < minPasswordLength) {
       Toasts.invalidCredentials();
       return;
     }
@@ -170,7 +171,7 @@ export default function LoginScreen() {
         />
 
         <TextInput
-          placeholder={isSignUp ? 'Password (min 6 characters)' : 'Password'}
+          placeholder={isSignUp ? 'Password (min 8 characters)' : 'Password'}
           value={password}
           onChangeText={setPassword}
           secureTextEntry

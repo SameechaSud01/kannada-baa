@@ -17,6 +17,7 @@ import { useUserStore } from '../stores/useUserStore';
 import { useProgressStore } from '../stores/progressStore';
 import { supabase } from '../services/api/supabase';
 import { fetchUserRow } from '../services/api/users';
+import { syncOnboardingToSupabase } from '../services/api/onboarding';
 import { fetchCompletedLessons, recordLessonCompletion } from '../services/api/progress';
 import { fetchLessonIdBySlug } from '../services/api/lessons';
 import { Audio } from 'expo-av';
@@ -127,6 +128,26 @@ function AppGate() {
         .then(async (row) => {
           if (!row) return;
           useUserStore.getState().hydrateFromUserRow(row);
+
+          // spec_security_hardening.md §6: if local says onboarding is done but
+          // the DB row's flag is null, the prior sync silently failed. Retry
+          // once now that we have a session.
+          const pending = useUserStore.getState().pendingOnboardingSync;
+          if (pending && !row.onboarding_completed_at) {
+            const result = await syncOnboardingToSupabase({
+              userId,
+              name: pending.displayName ?? null,
+              learningMode: pending.learningMode,
+              motivations: pending.motivations,
+              dailyGoalMinutes: pending.dailyGoalMinutes,
+            });
+            if (result.ok) {
+              useUserStore.getState().setPendingOnboardingSync(null);
+            }
+            // On failure, leave the snapshot — we'll try again next boot. No
+            // toast: user already completed onboarding from their POV.
+          }
+
           // Re-arm the OS schedule on each sign-in so reinstalls / new devices
           // restore the user's chosen time (spec_profile_settings_wiring §3).
           if (row.daily_reminder_time) {
