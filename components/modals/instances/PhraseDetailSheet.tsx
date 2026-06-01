@@ -56,40 +56,41 @@ export function PhraseDetailSheet({ phrase, onDismiss }: PhraseDetailSheetProps)
         <View style={{ flex: 1 }}>
           <Text
             style={{
-              fontFamily: Fonts.notoSerifKannada.medium,
-              fontSize: moderateScale(32),
-              lineHeight: moderateScale(54),
+              fontFamily: Fonts.lora.mediumItalic,
+              fontSize: moderateScale(28),
+              lineHeight: moderateScale(38),
               color: Colors.onSurface,
               includeFontPadding: false,
             }}
             maxFontSizeMultiplier={1.3}
-            numberOfLines={2}
+            numberOfLines={3}
             adjustsFontSizeToFit
             minimumFontScale={0.7}
-          >
-            {speakable(phrase.kannada) || phrase.kannada}
-          </Text>
-          <Text
-            style={{
-              fontFamily: Fonts.lora.mediumItalic,
-              fontSize: moderateScale(18),
-              color: Colors.secondary,
-              marginTop: moderateScale(4),
-            }}
-            maxFontSizeMultiplier={1.4}
           >
             {phrase.transliteration}
           </Text>
           <Text
             style={{
-              fontFamily: Fonts.dmSans.regular,
-              fontSize: moderateScale(13),
+              fontFamily: Fonts.dmSans.medium,
+              fontSize: moderateScale(15),
               color: Colors.tertiary,
-              marginTop: moderateScale(2),
+              marginTop: moderateScale(6),
             }}
             maxFontSizeMultiplier={1.4}
           >
             {phrase.english}
+          </Text>
+          <Text
+            style={{
+              fontFamily: Fonts.notoSerifKannada.regular,
+              fontSize: moderateScale(14),
+              color: Colors.tertiary,
+              marginTop: moderateScale(6),
+              opacity: 0.7,
+            }}
+            maxFontSizeMultiplier={1.4}
+          >
+            {speakable(phrase.kannada) || phrase.kannada}
           </Text>
         </View>
         <RoundIconButton
@@ -117,33 +118,37 @@ export function PhraseDetailSheet({ phrase, onDismiss }: PhraseDetailSheetProps)
                   gap: moderateScale(10),
                 }}
               >
-                <Text
-                  style={{
-                    fontFamily: Fonts.notoSerifKannada.medium,
-                    fontSize: moderateScale(18),
-                    color: Colors.onSurface,
-                  }}
-                  maxFontSizeMultiplier={1.3}
-                >
-                  {atom.atom}
-                </Text>
-                {atom.transliteration ? (
+                <View style={{ flexShrink: 1 }}>
+                  {atom.transliteration ? (
+                    <Text
+                      style={{
+                        fontFamily: Fonts.lora.italic,
+                        fontSize: moderateScale(16),
+                        color: Colors.onSurface,
+                      }}
+                      maxFontSizeMultiplier={1.4}
+                    >
+                      {atom.transliteration}
+                    </Text>
+                  ) : null}
                   <Text
                     style={{
-                      fontFamily: Fonts.lora.italic,
+                      fontFamily: Fonts.notoSerifKannada.regular,
                       fontSize: moderateScale(13),
-                      color: Colors.secondary,
+                      color: Colors.tertiary,
+                      marginTop: moderateScale(2),
+                      opacity: 0.7,
                     }}
-                    maxFontSizeMultiplier={1.4}
+                    maxFontSizeMultiplier={1.3}
                   >
-                    {atom.transliteration}
+                    {atom.atom}
                   </Text>
-                ) : null}
+                </View>
                 <View style={{ flex: 1 }} />
                 <Text
                   style={{
-                    fontFamily: Fonts.dmSans.regular,
-                    fontSize: moderateScale(12),
+                    fontFamily: Fonts.dmSans.medium,
+                    fontSize: moderateScale(13),
                     color: Colors.tertiary,
                     textAlign: 'right',
                   }}

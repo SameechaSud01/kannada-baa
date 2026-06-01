@@ -83,7 +83,7 @@ const OptionButton: React.FC<Props> = ({ option, state, onPress }) => {
         disabled={state !== 'default'}
         android_ripple={null}
         accessibilityRole="button"
-        accessibilityLabel={`${option.kn}, ${option.en}`}
+        accessibilityLabel={`${option.tr || option.en}, ${option.en}`}
         accessibilityState={{ selected: isLifted, disabled: state !== 'default' }}
         style={{
           backgroundColor: Colors.surface,
@@ -93,29 +93,46 @@ const OptionButton: React.FC<Props> = ({ option, state, onPress }) => {
           padding: Spacing.lg,
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: moderateScale(80),
+          minHeight: moderateScale(88),
         }}
       >
+        {option.tr ? (
+          <Text
+            style={{
+              fontFamily: Fonts.lora.italic,
+              fontSize: moderateScale(18),
+              textAlign: 'center',
+              color: Colors.onSurface,
+            }}
+            maxFontSizeMultiplier={1.3}
+          >
+            {option.tr}
+          </Text>
+        ) : null}
         <Text
           style={{
-            fontFamily: Fonts.notoSerifKannada.bold,
-            fontSize: moderateScale(20),
+            fontFamily: Fonts.dmSans.medium,
+            fontSize: moderateScale(13),
             textAlign: 'center',
-            color: Colors.onSurface,
+            marginTop: option.tr ? moderateScale(2) : 0,
+            color: Colors.tertiary,
           }}
+          maxFontSizeMultiplier={1.3}
         >
-          {option.kn}
+          {option.en}
         </Text>
         <Text
           style={{
-            fontFamily: Fonts.dmSans.regular,
-            fontSize: moderateScale(12),
+            fontFamily: Fonts.notoSerifKannada.regular,
+            fontSize: moderateScale(13),
             textAlign: 'center',
-            marginTop: Spacing.xs,
+            marginTop: moderateScale(4),
             color: Colors.tertiary,
+            opacity: 0.7,
           }}
+          maxFontSizeMultiplier={1.3}
         >
-          {option.en}
+          {option.kn}
         </Text>
         {isLifted && (
           <Animated.View

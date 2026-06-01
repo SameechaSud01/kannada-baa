@@ -57,38 +57,42 @@ const WordOptionButton: React.FC<Props> = ({ item, state, hintVisible, onPress }
       opacity: pressed && state === 'default' ? 0.8 : 1,
     })}
   >
-    <View>
+    <View style={{ flex: 1 }}>
+      {item.ph ? (
+        <Text
+          style={{
+            fontFamily: Fonts.lora.italic,
+            fontSize: moderateScale(17),
+            color: KN_COLOR[state],
+          }}
+          maxFontSizeMultiplier={1.3}
+        >
+          {item.ph}
+        </Text>
+      ) : null}
       <Text
         style={{
-          fontFamily: 'NotoSansKannada_700Bold',
-          fontSize: moderateScale(20),
-          color: KN_COLOR[state],
-        }}
-      >
-        {item.kn}
-      </Text>
-      <Text
-        style={{
-          fontFamily: Fonts.lora.italic,
-          fontSize: moderateScale(12),
+          fontFamily: Fonts.dmSans.medium,
+          fontSize: moderateScale(13),
           color: Colors.tertiary,
           marginTop: moderateScale(2),
         }}
+        maxFontSizeMultiplier={1.3}
       >
-        {item.ph}
+        {item.en}
       </Text>
-      {hintVisible && (
-        <Text
-          style={{
-            fontFamily: Fonts.dmSans.regular,
-            fontSize: moderateScale(11),
-            color: Colors.tertiary,
-            marginTop: moderateScale(1),
-          }}
-        >
-          {item.en}
-        </Text>
-      )}
+      <Text
+        style={{
+          fontFamily: 'NotoSansKannada_400Regular',
+          fontSize: moderateScale(13),
+          color: Colors.tertiary,
+          marginTop: moderateScale(2),
+          opacity: 0.7,
+        }}
+        maxFontSizeMultiplier={1.3}
+      >
+        {item.kn}
+      </Text>
     </View>
   </Pressable>
 );

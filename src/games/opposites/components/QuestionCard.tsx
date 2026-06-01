@@ -38,35 +38,46 @@ const QuestionCard: React.FC<Props> = ({ word, tr, meaning, streak }) => (
     >
       find the opposite of
     </Text>
+    {tr ? (
+      <Text
+        style={{
+          fontFamily: Fonts.lora.italic,
+          fontSize: moderateScale(40),
+          lineHeight: moderateScale(52),
+          textAlign: 'center',
+          color: Colors.onSurface,
+        }}
+        adjustsFontSizeToFit
+        numberOfLines={2}
+        maxFontSizeMultiplier={1.2}
+      >
+        {tr}
+      </Text>
+    ) : null}
     <Text
       style={{
-        fontFamily: Fonts.notoSerifKannada.bold,
-        fontSize: moderateScale(48),
+        fontFamily: Fonts.dmSans.medium,
+        fontSize: moderateScale(16),
         textAlign: 'center',
-        color: Colors.onSurface,
+        color: Colors.tertiary,
+        marginTop: Spacing.sm,
       }}
+      maxFontSizeMultiplier={1.3}
+    >
+      {meaning}
+    </Text>
+    <Text
+      style={{
+        fontFamily: Fonts.notoSerifKannada.regular,
+        fontSize: moderateScale(14),
+        textAlign: 'center',
+        color: Colors.tertiary,
+        marginTop: Spacing.md,
+        opacity: 0.7,
+      }}
+      maxFontSizeMultiplier={1.3}
     >
       {word}
-    </Text>
-    <Text
-      style={{
-        fontFamily: Fonts.lora.italic,
-        fontSize: moderateScale(14),
-        color: Colors.tertiary,
-        marginTop: Spacing.xs,
-      }}
-    >
-      {tr}
-    </Text>
-    <Text
-      style={{
-        fontFamily: Fonts.dmSans.regular,
-        fontSize: moderateScale(12),
-        color: Colors.tertiary,
-        marginTop: moderateScale(2),
-      }}
-    >
-      ({meaning})
     </Text>
 
     {streak >= 2 && (
