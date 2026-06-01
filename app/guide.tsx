@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale } from 'react-native-size-matters';
@@ -7,12 +7,15 @@ import { Colors } from '../constants/colors';
 import { Fonts } from '../constants/fonts';
 import { Spacing, Radius } from '../constants/spacing';
 import { Icons } from '../constants/icons';
-import { GuideContent } from '../components/guide/GuideContent';
+import { GUIDE_SECTIONS } from '../constants/guide';
+import { GuidePager } from '../components/guide/GuidePager';
+import { GuideDots } from '../components/guide/GuideDots';
 import { useUserStore } from '../stores/useUserStore';
 
 /**
  * Voluntary re-entry to the Beginners' Guide from the Learn tab.
- * Same content as /onboarding/basics, no ProgressDots, no sticky CTA.
+ * Same pager as /onboarding/basics, no ProgressDots, no sticky CTA — the user
+ * can swipe freely between sections and exit via the back chip.
  * See spec_beginners_guide.md.
  */
 export default function GuideScreen() {
@@ -20,12 +23,17 @@ export default function GuideScreen() {
   const insets = useSafeAreaInsets();
   const hasSeenBasicsGuide = useUserStore((s) => s.hasSeenBasicsGuide);
   const setHasSeenBasicsGuide = useUserStore((s) => s.setHasSeenBasicsGuide);
+  const [activePage, setActivePage] = useState(0);
 
   useEffect(() => {
     if (!hasSeenBasicsGuide) {
       setHasSeenBasicsGuide(true);
     }
   }, [hasSeenBasicsGuide, setHasSeenBasicsGuide]);
+
+  const handlePageChange = useCallback((idx: number) => {
+    setActivePage(idx);
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.surface }}>
@@ -69,29 +77,18 @@ export default function GuideScreen() {
         </Text>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
+      <GuidePager onPageChange={handlePageChange} />
+
+      <View
+        style={{
           paddingHorizontal: Spacing.xxl,
-          paddingTop: Spacing.lg,
-          paddingBottom: insets.bottom + Spacing.xxxl,
+          paddingTop: Spacing.md,
+          paddingBottom: insets.bottom + Spacing.lg,
+          backgroundColor: Colors.surface,
         }}
       >
-        <Text
-          style={{
-            fontFamily: Fonts.dmSans.regular,
-            fontSize: moderateScale(15),
-            lineHeight: moderateScale(22),
-            color: Colors.tertiary,
-            marginBottom: Spacing.xxl,
-          }}
-          maxFontSizeMultiplier={1.4}
-        >
-          A quick guide to how Kannada sounds.
-        </Text>
-
-        <GuideContent />
-      </ScrollView>
+        <GuideDots total={GUIDE_SECTIONS.length} current={activePage} />
+      </View>
     </View>
   );
 }

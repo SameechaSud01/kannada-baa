@@ -1,13 +1,15 @@
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { Spacing } from '../../constants/spacing';
+import { GUIDE_SECTIONS } from '../../constants/guide';
 import { ProgressDots } from '../../components/onboarding/ProgressDots';
-import { GuideContent } from '../../components/guide/GuideContent';
+import { GuidePager, type GuidePagerHandle } from '../../components/guide/GuidePager';
+import { GuideDots } from '../../components/guide/GuideDots';
 import { useUserStore } from '../../stores/useUserStore';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { completeOnboarding } from '../../services/api/users';
@@ -20,9 +22,22 @@ import { Toasts } from '../../components/modals/instances/toastCatalog';
 export default function BasicsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const pagerRef = useRef<GuidePagerHandle>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [activePage, setActivePage] = useState(0);
+  const [hasReachedLast, setHasReachedLast] = useState(false);
 
-  const handleContinue = async () => {
+  const totalPages = GUIDE_SECTIONS.length;
+  const showContinue = hasReachedLast;
+
+  const handlePageChange = useCallback((idx: number) => {
+    setActivePage(idx);
+    if (idx >= GUIDE_SECTIONS.length - 1) {
+      setHasReachedLast(true);
+    }
+  }, []);
+
+  const finishOnboarding = async () => {
     if (submitting) return;
 
     const userId = useAuthStore.getState().user?.id;
@@ -34,8 +49,6 @@ export default function BasicsScreen() {
     const { displayName, learningMode, motivations, dailyGoalMinutes } =
       useUserStore.getState();
 
-    // Defensive — flow should have these set, but if any prior step's data is
-    // missing, route back to that step instead of submitting a half-form.
     if (!learningMode) {
       router.replace('/onboarding/goal');
       return;
@@ -81,6 +94,16 @@ export default function BasicsScreen() {
     }
   };
 
+  const handlePrimaryPress = () => {
+    if (showContinue) {
+      void finishOnboarding();
+    } else {
+      pagerRef.current?.goToPage(activePage + 1);
+    }
+  };
+
+  const buttonLabel = showContinue ? 'Continue' : 'Next';
+
   return (
     <View
       style={{
@@ -93,14 +116,7 @@ export default function BasicsScreen() {
         <ProgressDots total={6} current={5} />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: Spacing.xxl,
-          paddingTop: Spacing.xxl,
-          paddingBottom: moderateScale(140) + insets.bottom,
-        }}
-      >
+      <View style={{ paddingHorizontal: Spacing.xxl, paddingTop: Spacing.xxl }}>
         <Text
           style={{
             fontFamily: Fonts.dmSans.bold,
@@ -108,57 +124,38 @@ export default function BasicsScreen() {
             letterSpacing: 2,
             color: Colors.tertiary,
             textTransform: 'uppercase',
-            marginBottom: Spacing.sm,
           }}
           maxFontSizeMultiplier={1.4}
         >
           Step 5 of 5
         </Text>
-        <Text
-          style={{
-            fontFamily: Fonts.dmSans.bold,
-            fontSize: moderateScale(28),
-            color: Colors.onSurface,
-            marginBottom: Spacing.sm,
-          }}
-          maxFontSizeMultiplier={1.3}
-        >
-          Before you start
-        </Text>
-        <Text
-          style={{
-            fontFamily: Fonts.dmSans.regular,
-            fontSize: moderateScale(15),
-            lineHeight: moderateScale(22),
-            color: Colors.tertiary,
-            marginBottom: Spacing.xxl,
-          }}
-          maxFontSizeMultiplier={1.4}
-        >
-          A quick guide to how Kannada sounds. You can revisit this anytime from the Learn tab.
-        </Text>
+      </View>
 
-        <GuideContent />
-      </ScrollView>
+      <GuidePager
+        ref={pagerRef}
+        showOnboardingHeader
+        onPageChange={handlePageChange}
+      />
 
       <View
         style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
           paddingHorizontal: Spacing.xxl,
-          paddingTop: Spacing.lg,
+          paddingTop: Spacing.md,
           paddingBottom: insets.bottom + Spacing.lg,
           backgroundColor: Colors.surface,
+          gap: Spacing.lg,
         }}
       >
+        <GuideDots total={totalPages} current={activePage} />
+
         <Pressable
-          onPress={handleContinue}
+          onPress={handlePrimaryPress}
           disabled={submitting}
           accessibilityRole="button"
-          accessibilityLabel="Continue to the home screen"
-          accessibilityState={{ busy: submitting }}
+          accessibilityLabel={
+            showContinue ? 'Continue to the home screen' : `Next: page ${activePage + 2} of ${totalPages}`
+          }
+          accessibilityState={{ busy: submitting, disabled: submitting }}
           style={({ pressed }) => ({
             backgroundColor: pressed ? Colors.primary : Colors.primaryContainer,
             borderRadius: moderateScale(16),
@@ -180,7 +177,7 @@ export default function BasicsScreen() {
                 color: Colors.onPrimary,
               }}
             >
-              Continue
+              {buttonLabel}
             </Text>
           )}
         </Pressable>

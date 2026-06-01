@@ -1,4 +1,4 @@
-import { Platform, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
@@ -22,7 +22,7 @@ export function KeyRow({ symbol, example }: KeyRowProps) {
     >
       <Text
         style={{
-          fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+          fontFamily: Fonts.lora.mediumItalic,
           fontSize: moderateScale(15),
           color: Colors.onSurface,
           minWidth: moderateScale(60),
