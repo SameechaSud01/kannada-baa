@@ -3,6 +3,8 @@ doc: SPEC_BEGINNERS_GUIDE
 status: proposed
 owner: samee
 last-reviewed: 2026-06-01
+amendments:
+  - 2026-06-01 — layout changed from single-scroll to horizontal pager (one section per page) for readability; component list updated; rest of spec (data model, navigation, state, migration, acceptance) unchanged.
 related:
   - ../../docs/foundation/NAVIGATION.md
   - ../../docs/foundation/CONTENT.md
@@ -245,14 +247,16 @@ Same as lessons: the two are not synced. The TS file is the curriculum decision 
 
 | Property | Value |
 |---|---|
-| Layout | Vertical `ScrollView` with `contentContainerStyle.paddingBottom` for the sticky CTA. |
+| Layout | **Horizontal pager — one section per page.** Each section is a full-width page rendered inside a horizontal `ScrollView` with `pagingEnabled` and `snapToInterval`. Each page is itself a vertical `ScrollView` so long sections (vowels: 13 items; consonants: 34 items) still scroll within their own page. No global vertical scroll across sections. |
 | Header (onboarding only) | "Step 5 of 5" eyebrow (per ProgressDots total=6, but the spoken "Step N of 5" label excludes welcome — matching the existing eyebrow rule from [spec_onboarding_tweaks.md](spec_onboarding_tweaks.md)). |
-| Title | "Before you start" |
-| Subtitle | "A quick guide to how Kannada sounds. You can revisit this anytime from the Learn tab." |
-| Sections | Rendered in `order`, each as `<GuideSection />` (subtitle row, then items in a list). |
+| Title (onboarding only, page 1) | "Before you start" |
+| Subtitle (onboarding only, page 1) | "A quick guide to how Kannada sounds. You can revisit this anytime from the Learn tab." |
+| Sections | One section per pager page, in `order`. Each page renders the section's title + subtitle + items inline (no `<GuideSection />` outer wrapper — the page IS the section). |
 | Item rendering | `<GlyphCard />` for `glyph`, `<RuleCard />` for `rule`, `<KeyRow />` for `key`. See [§Components](#components). |
-| Sticky CTA (onboarding only) | "Continue" — full-width red CTA matching the locked onboarding button pattern. Always enabled. Tap → `setOnboarding({ ..., hasSeenBasicsGuide: true })` → router replaces to `/(tabs)`. |
-| Sticky CTA (`/guide` re-entry) | Hidden. Back chip handles exit. |
+| Page-dot indicator | Below the pager, above the CTA. Four dots, the active dot is `Colors.primary` and 1.5× width; inactive dots are `Colors.surfaceContainerHighest`. Decorative only — not tappable (gesture-only navigation, matches "Swipe to continue" affordance). |
+| Sticky CTA (onboarding only) | Two-state button: "Next" on pages 1–3 (advances pager one page), "Continue" on page 4. Always enabled (`hasReachedLastPage` is tracked but does not gate — see below). On last page, tap → `setOnboarding({ ..., hasSeenBasicsGuide: true })` → router replaces to `/(tabs)`. |
+| Last-page gating (onboarding only) | The "Continue" label and the onboarding-complete behavior only appear after the user has reached page 4 at least once. Before that, the button reads "Next" and advances the pager. Returning to an earlier page after reaching the last keeps the button as "Continue" (the user has seen everything; they can finish whenever). |
+| Sticky CTA (`/guide` re-entry) | Hidden. Back chip handles exit. The user can swipe freely across pages with no completion requirement. |
 | Back chip (`/guide` only) | 40×40 `ExitBackButton` per [NAVIGATION.md back-behavior](../../docs/foundation/NAVIGATION.md#back-behavior). |
 
 ### Components
@@ -261,10 +265,14 @@ Same as lessons: the two are not synced. The TS file is the curriculum decision 
 
 | Component | Renders | Hierarchy |
 |---|---|---|
-| `<GuideSection title subtitle children />` | Section header + items list. No card chrome around the section itself (No-Line rule per [DESIGN.md](../../docs/foundation/DESIGN.md)). | n/a |
+| `<GuidePager onPageChange?  width />` | The horizontal `ScrollView` with `pagingEnabled` that hosts one `<GuidePage />` per section. Owns the active-page index and reports it via `onPageChange`. Exposes an imperative `goToPage(idx)` via ref for the parent's "Next" button. | n/a |
+| `<GuidePage section width />` | A single full-page render: title (large), subtitle (small), then the items list inside a vertical `ScrollView` (handles tall sections). One per section in the pager. | n/a |
+| `<GuideDots total current />` | Page-position indicator. `total` dots; the `current` dot is wider (1.5×) and uses `Colors.primary`; inactive dots use `Colors.surfaceContainerHighest`. | n/a |
 | `<GlyphCard kannada transliteration example />` | A row: **Kannada glyph (primary, large)** / transliteration (secondary, medium italic) / example (tertiary, small). | **Kannada-first exception.** See §Text-hierarchy exception below. |
 | `<RuleCard title description examples />` | Rule heading, description paragraph, then a small table of `transliteration → english` example rows. No Kannada glyphs (the rule is about romanisation). | n/a — rule is prose, not a vocab item. |
 | `<KeyRow symbol example />` | A single-line row: monospace `symbol` left, en-dash, `example` right. | n/a — symbol is romanisation, not Kannada script. |
+
+> **The previous `<GuideSection />` and `<GuideContent />` components are removed** — pages now own their own header. `<GuidePage />` replaces both. `<GlyphCard />`, `<RuleCard />`, `<KeyRow />` are unchanged.
 
 ### Text-hierarchy exception
 
@@ -436,10 +444,10 @@ set content_json = $json$
           {"kind":"glyph","kannada":"ಜ","transliteration":"ja","example":"as in jug"},
           {"kind":"glyph","kannada":"ಝ","transliteration":"jha","example":"as in badge"},
           {"kind":"glyph","kannada":"ಞ","transliteration":"nja","example":"rare in English"},
-          {"kind":"glyph","kannada":"ಟ","transliteration":"Ta","example":"as in top"},
-          {"kind":"glyph","kannada":"ಠ","transliteration":"Tha","example":"as in cut"},
-          {"kind":"glyph","kannada":"ಡ","transliteration":"Da","example":"as in dark"},
-          {"kind":"glyph","kannada":"ಢ","transliteration":"Ddha","example":"as in board"},
+          {"kind":"glyph","kannada":"ಟ","transliteration":"Ta","example":"as in Top"},
+          {"kind":"glyph","kannada":"ಠ","transliteration":"Tha","example":"as in Cut"},
+          {"kind":"glyph","kannada":"ಡ","transliteration":"Da","example":"as in Dark"},
+          {"kind":"glyph","kannada":"ಢ","transliteration":"Ddha","example":"as in Board"},
           {"kind":"glyph","kannada":"ಣ","transliteration":"Nha","example":"rare in English"},
           {"kind":"glyph","kannada":"ತ","transliteration":"ta","example":"as in Bharath"},
           {"kind":"glyph","kannada":"ಥ","transliteration":"tha","example":"as in thumb"},
@@ -449,7 +457,7 @@ set content_json = $json$
           {"kind":"glyph","kannada":"ಪ","transliteration":"pa","example":"as in papaya"},
           {"kind":"glyph","kannada":"ಫ","transliteration":"pha","example":"as in orphan"},
           {"kind":"glyph","kannada":"ಬ","transliteration":"ba","example":"as in balloon"},
-          {"kind":"glyph","kannada":"ಭ","transliteration":"bha","example":"as in bharat"},
+          {"kind":"glyph","kannada":"ಭ","transliteration":"bha","example":"as in Bharath"},
           {"kind":"glyph","kannada":"ಮ","transliteration":"ma","example":"as in man"},
           {"kind":"glyph","kannada":"ಯ","transliteration":"ya","example":"as in yak"},
           {"kind":"glyph","kannada":"ರ","transliteration":"ra","example":"as in rat"},
@@ -459,7 +467,7 @@ set content_json = $json$
           {"kind":"glyph","kannada":"ಷ","transliteration":"sshha","example":"as in shut"},
           {"kind":"glyph","kannada":"ಸ","transliteration":"sa","example":"as in sun"},
           {"kind":"glyph","kannada":"ಹ","transliteration":"ha","example":"as in hump"},
-          {"kind":"glyph","kannada":"ಳ","transliteration":"lla","example":"as in clitella"}
+          {"kind":"glyph","kannada":"ಳ","transliteration":"lla","example":"as in Clitella"}
         ]
       },
       {
