@@ -50,51 +50,47 @@ const QuestionCard: React.FC<Props> = ({ question, hintVisible, onHintPress }) =
 
       {isW2P ? (
         <>
+          {target.ph ? (
+            <Text
+              style={{
+                fontFamily: Fonts.lora.italic,
+                fontSize: moderateScale(34),
+                lineHeight: moderateScale(44),
+                textAlign: 'center',
+                color: Colors.onSurface,
+              }}
+              adjustsFontSizeToFit
+              numberOfLines={2}
+              maxFontSizeMultiplier={1.2}
+            >
+              {target.ph}
+            </Text>
+          ) : null}
           <Text
             style={{
-              fontFamily: 'NotoSansKannada_700Bold',
-              fontSize: moderateScale(40),
+              fontFamily: Fonts.dmSans.medium,
+              fontSize: moderateScale(15),
+              color: Colors.tertiary,
+              marginTop: Spacing.sm,
               textAlign: 'center',
-              color: Colors.onSurface,
             }}
+            maxFontSizeMultiplier={1.3}
+          >
+            {target.en}
+          </Text>
+          <Text
+            style={{
+              fontFamily: 'NotoSansKannada_400Regular',
+              fontSize: moderateScale(14),
+              color: Colors.tertiary,
+              marginTop: Spacing.sm,
+              textAlign: 'center',
+              opacity: 0.7,
+            }}
+            maxFontSizeMultiplier={1.3}
           >
             {target.kn}
           </Text>
-          <Text
-            style={{
-              fontFamily: Fonts.lora.italic,
-              fontSize: moderateScale(14),
-              color: Colors.tertiary,
-              marginTop: Spacing.xs,
-              textAlign: 'center',
-            }}
-          >
-            {target.ph}
-          </Text>
-          {hintVisible && (
-            <View
-              style={{
-                marginTop: Spacing.md,
-                backgroundColor: Colors.surface,
-                borderWidth: 1,
-                borderColor: Colors.surfaceContainerHigh,
-                borderRadius: Radius.md,
-                paddingHorizontal: Spacing.md,
-                paddingVertical: Spacing.sm,
-                alignSelf: 'stretch',
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: Fonts.dmSans.regular,
-                  fontSize: moderateScale(12),
-                  color: Colors.tertiary,
-                }}
-              >
-                word meaning: {target.en}
-              </Text>
-            </View>
-          )}
           <HintButton hintVisible={hintVisible} onPress={onHintPress} />
         </>
       ) : (

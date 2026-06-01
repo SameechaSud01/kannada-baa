@@ -213,28 +213,43 @@ export default function EmergencyScreen() {
                       }}
                     >
                       <View style={{ flex: 1, paddingRight: moderateScale(14) }}>
+                        {item.transliteration ? (
+                          <Text
+                            style={{
+                              fontFamily: Fonts.lora.italic,
+                              fontSize: moderateScale(20),
+                              lineHeight: moderateScale(28),
+                              color: Colors.onSurface,
+                              marginBottom: moderateScale(2),
+                            }}
+                            maxFontSizeMultiplier={1.3}
+                          >
+                            {item.transliteration}
+                          </Text>
+                        ) : null}
                         <Text
                           style={{
-                            fontFamily: Fonts.notoSerifKannada.bold,
-                            fontSize: moderateScale(22),
-                            lineHeight: moderateScale(34),
-                            color: Colors.primary,
-                            marginBottom: moderateScale(2),
+                            fontFamily: Fonts.dmSans.medium,
+                            fontSize: moderateScale(14),
+                            color: Colors.tertiary,
+                            lineHeight: moderateScale(19),
+                          }}
+                          maxFontSizeMultiplier={1.4}
+                        >
+                          {item.meaning}
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: Fonts.notoSerifKannada.regular,
+                            fontSize: moderateScale(13),
+                            color: Colors.tertiary,
+                            lineHeight: moderateScale(20),
+                            marginTop: moderateScale(4),
+                            opacity: 0.7,
                           }}
                           maxFontSizeMultiplier={1.4}
                         >
                           {item.kannada}
-                        </Text>
-                        <Text
-                          style={{
-                            fontFamily: Fonts.lora.italic,
-                            fontSize: moderateScale(13),
-                            color: Colors.tertiary,
-                            lineHeight: moderateScale(18),
-                          }}
-                          maxFontSizeMultiplier={1.4}
-                        >
-                          {item.transliteration ? `${item.transliteration} · ${item.meaning}` : item.meaning}
                         </Text>
                       </View>
                       <Pressable
