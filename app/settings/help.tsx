@@ -9,6 +9,7 @@ import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { Spacing, Radius } from '../../constants/spacing';
 import { Icons } from '../../constants/icons';
+import { safeOpenUrl } from '../../lib/safeOpenUrl';
 
 // `[OPEN]` per spec_profile_settings_wiring §5 — owner must fill in.
 // Rows referencing a null value are hidden at render time so no dead links ship.
@@ -53,11 +54,6 @@ export default function HelpScreen() {
     if (!SUPPORT_EMAIL) return;
     Linking.openURL(buildMailto(SUPPORT_EMAIL, 'Bug report — Kannada Baa', bugReportBody()))
       .catch(() => undefined);
-  }
-
-  function openUrl(url: string | null) {
-    if (!url) return;
-    Linking.openURL(url).catch(() => undefined);
   }
 
   return (
@@ -165,11 +161,11 @@ export default function HelpScreen() {
               {versionLabel}
             </Text>
           </View>
-          {PRIVACY_URL ? <Row label="Privacy policy" onPress={() => openUrl(PRIVACY_URL)} idx={1} /> : null}
+          {PRIVACY_URL ? <Row label="Privacy policy" onPress={() => safeOpenUrl(PRIVACY_URL)} idx={1} /> : null}
           {TERMS_URL ? (
             <Row
               label="Terms of service"
-              onPress={() => openUrl(TERMS_URL)}
+              onPress={() => safeOpenUrl(TERMS_URL)}
               idx={PRIVACY_URL ? 0 : 1}
             />
           ) : null}

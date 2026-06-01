@@ -8,12 +8,13 @@ export interface OnboardingRow {
   dailyGoalMinutes: 5 | 10 | 20 | null;
 }
 
-/**
- * Writes onboarding answers to the `public.users` row.
- * Best-effort: failures are logged and swallowed so a network hiccup doesn't
- * trap the user on /commitment — local state (AsyncStorage) is already saved.
- */
-export async function syncOnboardingToSupabase(row: OnboardingRow): Promise<void> {
+export type SyncResult = { ok: true } | { ok: false; error: unknown };
+
+// Background retry for an onboarding row that failed to sync on first commit.
+// Foreground onboarding goes through completeOnboarding() in ./users — that
+// fetches the row back for hydration. This path is fire-and-record-result and
+// is only invoked from the boot path (spec_security_hardening.md §6).
+export async function syncOnboardingToSupabase(row: OnboardingRow): Promise<SyncResult> {
   const { error } = await supabase
     .from('users')
     .update({
@@ -27,5 +28,7 @@ export async function syncOnboardingToSupabase(row: OnboardingRow): Promise<void
 
   if (error) {
     console.warn('[onboarding] sync to users table failed', error);
+    return { ok: false, error };
   }
+  return { ok: true };
 }
