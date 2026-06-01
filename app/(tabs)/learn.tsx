@@ -15,6 +15,7 @@ import {
 } from '../../constants/lessons/plannedLessons';
 import { useModal } from '../../components/modals/ModalHost';
 import { LessonLockedDialog } from '../../components/modals/instances/LessonLockedDialog';
+import { LessonInfoDialog } from '../../components/modals/instances/LessonInfoDialog';
 
 const ESTIMATED_MIN_PER_LESSON = 5;
 
@@ -100,6 +101,27 @@ export default function LearnScreen() {
     if (row.realLessonSlug) {
       router.push(`/lesson/${row.realLessonSlug}`);
     }
+  };
+
+  const handleInfoPress = (row: LessonRow) => {
+    const prevSlot = row.slot - 1;
+    modal.show({
+      kind: 'dialog',
+      component: LessonInfoDialog,
+      props: {
+        lessonNumber: row.slot,
+        lessonTitle: row.title,
+        description: row.subtitle,
+        phraseCount: row.phraseCount,
+        estimatedMinutes: ESTIMATED_MIN_PER_LESSON,
+        locked: row.state === 'locked',
+        prevLessonNumber: row.state === 'locked' ? prevSlot : undefined,
+        prevLessonTitle:
+          row.state === 'locked' ? row.prevTitle ?? `Lesson ${prevSlot}` : undefined,
+        onDismiss: () => modal.dismiss(),
+      },
+      dim: 0.4,
+    });
   };
 
   return (
@@ -199,6 +221,7 @@ export default function LearnScreen() {
               key={`slot-${row.slot}`}
               row={row}
               onPress={() => handleRowPress(row)}
+              onInfoPress={() => handleInfoPress(row)}
             />
           ))}
         </View>
@@ -207,7 +230,15 @@ export default function LearnScreen() {
   );
 }
 
-function LessonRowView({ row, onPress }: { row: LessonRow; onPress: () => void }) {
+function LessonRowView({
+  row,
+  onPress,
+  onInfoPress,
+}: {
+  row: LessonRow;
+  onPress: () => void;
+  onInfoPress: () => void;
+}) {
   const isLocked = row.state === 'locked';
   const isDone = row.state === 'done';
   const isActive = row.state === 'active';
@@ -273,28 +304,27 @@ function LessonRowView({ row, onPress }: { row: LessonRow; onPress: () => void }
             fontFamily: Fonts.dmSans.medium,
             fontSize: moderateScale(15),
             color: Colors.onSurface,
-            marginBottom: moderateScale(3),
           }}
           maxFontSizeMultiplier={1.3}
           numberOfLines={1}
         >
           {row.slot}. {row.title}
         </Text>
-        <Text
-          style={{
-            fontFamily: Fonts.dmSans.regular,
-            fontSize: moderateScale(12),
-            color: Colors.tertiary,
-            lineHeight: moderateScale(16),
-          }}
-          numberOfLines={2}
-          maxFontSizeMultiplier={1.4}
-        >
-          {isLocked
-            ? `Complete ${row.prevTitle ?? 'the previous lesson'} to unlock`
-            : `${row.subtitle}${row.phraseCount ? ` · ${row.phraseCount} phrases · ${ESTIMATED_MIN_PER_LESSON} min` : ` · ${ESTIMATED_MIN_PER_LESSON} min`}`}
-        </Text>
       </View>
+
+      <Pressable
+        onPress={onInfoPress}
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel={`About Lesson ${row.slot}: ${row.title}`}
+        style={({ pressed }) => ({
+          marginLeft: moderateScale(8),
+          padding: moderateScale(4),
+          opacity: pressed ? 0.5 : 1,
+        })}
+      >
+        <Icons.info size={18} color={Colors.tertiary} />
+      </Pressable>
 
       <View style={{ marginLeft: moderateScale(10) }}>
         {isDone && <Icons.lessonDone size={18} color={Colors.primary} />}
