@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../services/api/supabase';
 import { resetLessonsCache } from '../services/api/lessons';
+import { signOutGoogle } from '../services/auth/google';
 
 interface AuthState {
   session: Session | null;
@@ -27,6 +28,9 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
   signOut: async () => {
     await supabase.auth.signOut();
+    // Force Google's native account picker to re-prompt next time. Benign
+    // no-op when the user signed in with any other provider.
+    await signOutGoogle().catch(() => undefined);
     // Preserve persisted user + progress state across signOut. AppGate's bind
     // effect calls resetForUser() when a different user signs in next, which
     // covers the cross-account leak case. Wiping state here breaks same-user

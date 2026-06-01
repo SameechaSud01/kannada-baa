@@ -1,15 +1,37 @@
-import { useState } from 'react';
-import { View, Text, TextInput, Pressable, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/colors';
 import { Fonts } from '../../constants/fonts';
 import { Spacing, Radius } from '../../constants/spacing';
 import { supabase } from '../../services/api/supabase';
 import { Toasts } from '../../components/modals/instances/toastCatalog';
+import {
+  signInWithGoogle,
+  GoogleStatusCodes,
+} from '../../services/auth/google';
+import {
+  isAppleSupported,
+  signInWithAppleNative,
+  signInWithAppleWeb,
+  APPLE_CANCEL_CODE,
+} from '../../services/auth/apple';
+import { GoogleGlyph } from '../../components/auth/GoogleGlyph';
+import { AppleGlyph } from '../../components/auth/AppleGlyph';
 
 const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
 type Mode = 'login' | 'signup';
+type Provider = 'email' | 'google' | 'apple';
 
 const COPY: Record<Mode, { title: string; subtitle: string; cta: string }> = {
   login: {
@@ -24,14 +46,55 @@ const COPY: Record<Mode, { title: string; subtitle: string; cta: string }> = {
   },
 };
 
+// Supabase returns this kind of error when an OAuth identity collides with
+// an account that was originally created via a different provider (Rule 1).
+// The exact shape varies across Supabase versions — match conservatively.
+function isIdentityCollisionError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { status?: number; code?: string; message?: string };
+  if (e.status === 422 && (e.code === 'email_exists' || e.code === 'identity_already_exists')) {
+    return true;
+  }
+  const msg = (e.message ?? '').toLowerCase();
+  return (
+    msg.includes('user already registered') ||
+    msg.includes('identity already exists') ||
+    msg.includes('email already exists')
+  );
+}
+
+function isUserCancellation(err: unknown, provider: 'google' | 'apple'): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { code?: string | number; message?: string };
+  if (provider === 'google') {
+    return e.code === GoogleStatusCodes.SIGN_IN_CANCELLED;
+  }
+  if (provider === 'apple') {
+    return e.code === APPLE_CANCEL_CODE || (e.message ?? '').includes('cancelled');
+  }
+  return false;
+}
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<Mode>('login');
-  const [loading, setLoading] = useState(false);
+  const [pending, setPending] = useState<Provider | null>(null);
+  const [appleAvailable, setAppleAvailable] = useState(false);
 
   const isSignUp = mode === 'signup';
   const copy = COPY[mode];
+  const loading = pending !== null;
+
+  useEffect(() => {
+    let cancelled = false;
+    isAppleSupported().then((ok) => {
+      if (!cancelled) setAppleAvailable(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleAuth = async () => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -42,7 +105,7 @@ export default function LoginScreen() {
     }
 
     Keyboard.dismiss();
-    setLoading(true);
+    setPending('email');
     try {
       if (isSignUp) {
         const { data, error } = await supabase.auth.signUp({
@@ -67,7 +130,49 @@ export default function LoginScreen() {
       console.warn('[auth] error', error);
       Toasts.signInFailed();
     } finally {
-      setLoading(false);
+      setPending(null);
+    }
+  };
+
+  const handleGoogle = async () => {
+    Keyboard.dismiss();
+    setPending('google');
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      if (isUserCancellation(error, 'google')) {
+        console.info('[auth] google sign-in cancelled');
+      } else if (isIdentityCollisionError(error)) {
+        Toasts.emailUsesDifferentMethod();
+      } else {
+        console.warn('[auth] google error', error);
+        Toasts.signInFailed();
+      }
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const handleApple = async () => {
+    Keyboard.dismiss();
+    setPending('apple');
+    try {
+      if (Platform.OS === 'ios') {
+        await signInWithAppleNative();
+      } else {
+        await signInWithAppleWeb();
+      }
+    } catch (error) {
+      if (isUserCancellation(error, 'apple')) {
+        console.info('[auth] apple sign-in cancelled');
+      } else if (isIdentityCollisionError(error)) {
+        Toasts.emailUsesDifferentMethod();
+      } else {
+        console.warn('[auth] apple error', error);
+        Toasts.signInFailed();
+      }
+    } finally {
+      setPending(null);
     }
   };
 
@@ -154,6 +259,7 @@ export default function LoginScreen() {
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
+          editable={!loading}
           style={{
             fontFamily: Fonts.dmSans.regular,
             fontSize: moderateScale(15),
@@ -174,6 +280,7 @@ export default function LoginScreen() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          editable={!loading}
           style={{
             fontFamily: Fonts.dmSans.regular,
             fontSize: moderateScale(15),
@@ -198,21 +305,83 @@ export default function LoginScreen() {
             borderRadius: Radius.md,
             paddingVertical: Spacing.md + moderateScale(2),
             alignItems: 'center',
-            opacity: loading ? 0.7 : 1,
+            justifyContent: 'center',
+            minHeight: moderateScale(44),
+            opacity: loading && pending !== 'email' ? 0.5 : 1,
             transform: [{ scale: pressed ? 0.96 : 1 }],
           })}
         >
+          {pending === 'email' ? (
+            <ActivityIndicator color={Colors.onPrimary} />
+          ) : (
+            <Text
+              style={{
+                fontFamily: Fonts.dmSans.bold,
+                fontSize: moderateScale(14),
+                color: Colors.onPrimary,
+                letterSpacing: 0.5,
+              }}
+            >
+              {copy.cta}
+            </Text>
+          )}
+        </Pressable>
+
+        {/* OR divider */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: Spacing.xl,
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              height: moderateScale(0.5),
+              backgroundColor: Colors.outlineVariant,
+            }}
+          />
           <Text
             style={{
-              fontFamily: Fonts.dmSans.bold,
-              fontSize: moderateScale(14),
-              color: Colors.onPrimary,
+              fontFamily: Fonts.dmSans.regular,
+              fontSize: moderateScale(12),
+              color: Colors.tertiary,
+              paddingHorizontal: Spacing.md,
               letterSpacing: 0.5,
             }}
           >
-            {loading ? 'Please wait...' : copy.cta}
+            or
           </Text>
-        </Pressable>
+          <View
+            style={{
+              flex: 1,
+              height: moderateScale(0.5),
+              backgroundColor: Colors.outlineVariant,
+            }}
+          />
+        </View>
+
+        {/* Google */}
+        <OAuthButton
+          label="Continue with Google"
+          glyph={<GoogleGlyph />}
+          onPress={handleGoogle}
+          loading={pending === 'google'}
+          disabled={loading}
+        />
+
+        {appleAvailable && (
+          <View style={{ marginTop: Spacing.md }}>
+            <OAuthButton
+              label="Continue with Apple"
+              glyph={<AppleGlyph />}
+              onPress={handleApple}
+              loading={pending === 'apple'}
+              disabled={loading}
+            />
+          </View>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -248,6 +417,58 @@ function SegmentButton({ label, active, onPress }: SegmentButtonProps) {
       >
         {label}
       </Text>
+    </Pressable>
+  );
+}
+
+type OAuthButtonProps = {
+  label: string;
+  glyph: React.ReactNode;
+  onPress: () => void;
+  loading: boolean;
+  disabled: boolean;
+};
+
+function OAuthButton({ label, glyph, onPress, loading, disabled }: OAuthButtonProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: Colors.surfaceContainerHigh,
+        borderWidth: moderateScale(0.5),
+        borderColor: Colors.outlineVariant,
+        borderRadius: Radius.md,
+        paddingVertical: Spacing.md,
+        paddingHorizontal: Spacing.lg,
+        minHeight: moderateScale(44),
+        opacity: disabled && !loading ? 0.5 : 1,
+        transform: [{ scale: pressed ? 0.97 : 1 }],
+      })}
+    >
+      {loading ? (
+        <ActivityIndicator color={Colors.onSurface} />
+      ) : (
+        <>
+          {glyph}
+          <Text
+            style={{
+              fontFamily: Fonts.dmSans.medium,
+              fontSize: moderateScale(14),
+              color: Colors.onSurface,
+              marginLeft: Spacing.md,
+              letterSpacing: 0.3,
+            }}
+          >
+            {label}
+          </Text>
+        </>
+      )}
     </Pressable>
   );
 }

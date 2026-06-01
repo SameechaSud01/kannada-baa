@@ -265,7 +265,10 @@ No changes needed.
 ## Out of scope (explicitly do not add)
 - Email confirmation handling (deep links, post-confirm redirect). Spec
   assumes "Confirm email" stays OFF.
-- OAuth providers (Google, Apple, etc).
+- ~~OAuth providers (Google, Apple, etc).~~ **Superseded** by
+  [spec_oauth_google_apple.md](spec_oauth_google_apple.md) — Google and
+  Apple sign-in route through the same `handle_new_user` trigger and
+  AppGate onboarding gate defined here.
 - Profile editing (name, avatar). Onboarding writes the three answer fields
   only; everything else on `public.users` is owned by other features.
 - Re-running onboarding from settings. If the user wants to change their

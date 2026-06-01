@@ -69,6 +69,15 @@ export const Toasts = {
     });
   },
 
+  emailUsesDifferentMethod() {
+    Toast.show({
+      kind: 'error',
+      id: 'signIn.differentMethod',
+      title: 'This email is already registered',
+      subtitle: 'Sign in with the method you originally used',
+    });
+  },
+
   confirmEmailPending() {
     Toast.show({
       kind: 'success',

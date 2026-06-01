@@ -14,6 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Kannada Baa records your voice so you can hear yourself practice phrases. Recordings stay on your device.",
         "NSUserNotificationsUsageDescription": "Kannada Baa sends one daily reminder at the time you choose so you keep your streak.",
@@ -43,7 +44,14 @@
       "expo-secure-store",
       "expo-font",
       "@react-native-community/datetimepicker",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.REPLACE_WITH_GOOGLE_IOS_CLIENT_ID"
+        }
+      ]
     ],
     "extra": {
       "router": {},

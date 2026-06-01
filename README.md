@@ -11,11 +11,16 @@ A mobile app for learning Kannada — built with Expo (SDK 54), Expo Router, Rea
 - **Node.js** 20.x or newer
 - **npm** 10.x (the lockfile is npm — do not switch to yarn/pnpm)
 - **Git**
+- **Xcode** (latest) with an iOS simulator — for iOS dev
+- **Android Studio** with an emulator (or a physical device + USB) — for Android dev
 - **Expo CLI** is invoked via `npx`; no global install needed
-- **The Expo Go app** on your phone ([iOS](https://apps.apple.com/app/expo-go/id982107779) / [Android](https://play.google.com/store/apps/details?id=host.exp.exponent)) — the easiest way to run the app
-- *(Optional)* **Xcode** with an iOS simulator, and/or **Android Studio** with an emulator — only if you prefer simulators over a physical phone
+- **EAS CLI** for dev-client builds: `npm i -g eas-cli`
 
-> **This app runs in Expo Go.** No native build, no Apple/Google account, no EAS setup — install the Expo Go app on your phone, start the dev server, and scan the QR code. Your phone and computer just need to be on the same Wi-Fi network.
+> **This app no longer runs in Expo Go.** Google and Apple sign-in
+> (spec_oauth_google_apple) ship native modules; you need a custom dev
+> client. Build it once with `eas build --profile development` (or `npx
+> expo prebuild && npm run ios` for a local build), install it on your
+> simulator/device, then `npm start` connects Metro to that client.
 
 ---
 
@@ -61,13 +66,15 @@ Notes:
 ## Running the app
 
 ```bash
-npm start          # Expo dev server with QR code — scan it with the Expo Go app
-npm run ios        # open in Expo Go on an iOS simulator (needs Xcode)
-npm run android    # open in Expo Go on an Android emulator (needs Android Studio)
+npm start          # Metro dev server — connects to your installed dev client
+npm run ios        # build + launch the dev client on an iOS simulator
+npm run android    # build + launch the dev client on an Android emulator
 npm run web        # run in browser (limited — primary targets are iOS/Android)
 ```
 
-**Easiest path (no simulator needed):** run `npm start`, open the **Expo Go** app on your phone, and scan the QR code in the terminal. The phone and computer must be on the same Wi-Fi.
+**First-time setup:** you need a dev client installed before `npm start` is useful.
+- Quickest: `eas build --profile development --platform ios` (and `--platform android`), install the resulting build on your simulator/device.
+- Local alternative: `npx expo prebuild`, then `npm run ios` or `npm run android` to build natively (needs Xcode/Android Studio).
 
 Tips:
 - After `npm start`, press `i` / `a` / `w` to launch iOS sim / Android emulator / web.
@@ -80,9 +87,9 @@ Tips:
 
 | Script | What it does |
 |---|---|
-| `npm start` | Start the Expo dev server (scan the QR with Expo Go) |
-| `npm run ios` | Launch in Expo Go on an iOS simulator |
-| `npm run android` | Launch in Expo Go on an Android emulator |
+| `npm start` | Start the Expo Metro dev server (connects to your installed dev client) |
+| `npm run ios` | Build + launch the dev client on iOS simulator |
+| `npm run android` | Build + launch the dev client on Android emulator |
 | `npm run web` | Launch in browser |
 | `npm run typecheck` | `tsc --noEmit` — strict TypeScript check |
 | `npm run security-scan` | Local secret/PII scan (script is gitignored — ask Samee if you need it) |
@@ -205,7 +212,7 @@ This section is what Claude Code needs to make changes safely. Follow these rule
 ## Troubleshooting
 
 - **`npm install` peer-dependency errors** — the repo ships an `.npmrc` with `legacy-peer-deps=true` to bypass `expo-router`'s web-only `react-dom` peer dep on SDK 54. Don't delete it; if install still fails, run `npm install --legacy-peer-deps`.
-- **Expo Go can't connect / QR won't load** — make sure your phone and computer are on the same Wi-Fi. On restrictive networks, try `npx expo start --tunnel`.
+- **Dev client can't connect to Metro** — make sure your phone/simulator and computer are on the same network. On restrictive networks, try `npx expo start --tunnel`.
 - **`Unable to resolve module ...`** — kill Metro, then `npx expo start -c`.
 - **Supabase calls failing with "missing env"** — confirm `.env` exists at repo root and both `EXPO_PUBLIC_*` keys are set; restart Metro after editing `.env`.
 - **iOS sim won't boot** — open Xcode once and accept the license, then `xcrun simctl list devices` should show simulators.
